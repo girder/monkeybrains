@@ -4,6 +4,34 @@ var monkeybrainsPlugin = {
 
 monkeybrainsPlugin.views.infoPageWidget = girder.View.extend({
 
+    normalizeToDOB: function (subjectid_to_dob, tasks) {
+        // remove dob events
+        var filteredTasks = _.filter(tasks, function (task) {
+            return task.status !== 'dob';
+        });
+        // normalize scan events to be relative to DOB
+        var min_date = null, max_date = null;
+        var msToDayConv = 1000 * 60 * 60 * 24;
+        var normalizedTasks = _.map(filteredTasks, function (task) {
+            var subject_id = task.taskName;
+            var dob = subjectid_to_dob[subject_id];
+            var scanOffsetMS = task.startDate - dob;
+            if(min_date === null) {
+                min_date = scanOffsetMS;
+            }
+            min_date = Math.min(min_date, scanOffsetMS);
+            max_date = Math.max(max_date, scanOffsetMS);
+            var nTask = {
+                "taskName": task.taskName,
+                "scanWeight": task.scanWeight,
+                "status": task.status,
+                "scanTime": scanOffsetMS / msToDayConv
+            };
+            return nTask;
+        });
+        return {'tasks': normalizedTasks, 'max_days': max_date / msToDayConv};
+    },
+
     createGanttInput: function (scans) {
         // data munging
         var subjects = {};
@@ -81,6 +109,7 @@ monkeybrainsPlugin.views.infoPageWidget = girder.View.extend({
                 tasks.push(scan_task);
             }
         }
+        var normalizedScans = this.normalizeToDOB(subjectid_to_dob, tasks);
         var taskStatuses = {'dob': 'birth',
                             'scan-weight-1': 'scan-weight-1',
                             'scan-weight-2': 'scan-weight-2',
@@ -94,7 +123,14 @@ monkeybrainsPlugin.views.infoPageWidget = girder.View.extend({
         subject_ids.sort(function(a, b) {
             return a.localeCompare(b);
         });
-        var gantt = {'subject_ids': subject_ids, 'tasks': tasks, 'taskStatuses': taskStatuses, 'timeDomain': timeDomain};
+        var gantt = {
+            'subject_ids': subject_ids,
+            'tasks': tasks,
+            'taskStatuses': taskStatuses,
+            'timeDomain': timeDomain,
+            'normalizedTasks': normalizedScans.tasks,
+            'max_days_normalized': normalizedScans.max_days
+        };
         return gantt;
     },
 
@@ -126,13 +162,18 @@ monkeybrainsPlugin.views.infoPageWidget = girder.View.extend({
                 }).done(_.bind(function (resp) {
                     ganttData = this.createGanttInput(resp);
                     // create a gantt chart
-                    var tickFormat = "%m-%y";
-                    var gantt = d3.gantt('.g-collection-infopage-gantt').taskTypes(ganttData.subject_ids);
-                    gantt.taskStatus(ganttData.taskStatuses);
-                    gantt.timeDomain(ganttData.timeDomain);
-                    gantt.tickFormat(tickFormat).timeDomainMode("fixed");
+                   //gantt.mode('linear');
+            //'normalizedTasks': normalizedScans.tasks,
+            //'max_days_normalized': normalizedScans.max_days
+                    var timeDisplayOptions = {
+                        'rowLabels': ganttData.subject_ids,
+                        'mode': 'time',
+                        'timeDomainMode': 'fixed',
+                        'timeDomain': ganttData.timeDomain,
+                        'taskStatuses': ganttData.taskStatuses
+                    }
+                    var gantt = d3.gantt('.g-collection-infopage-gantt', timeDisplayOptions);
                     gantt(ganttData.tasks);
-
                 }, this)).error(_.bind(function (err) {
                     console.log("error getting datasetEvents");
                     console.log(err);
