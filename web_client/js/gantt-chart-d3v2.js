@@ -10,17 +10,16 @@ d3.gantt = function(selector, options) {
     var defaults = {
         'mode': 'time',
         'timeDomain': [defaultTimeDomainStart, defaultTimeDomainEnd],
+        'linearDomain': [0,1],
         'timeDomainMode': FIT_TIME_DOMAIN_MODE,
         'tickFormat': '%m-%y',
         'taskStatuses': [],
-        'rowLabels': []
+        'rowLabels': [],
+        'weightBinRanges': []
     };
 
     var settings = options;
     _.defaults(settings, defaults);
-
-    //console.log('settings');
-    //console.log(settings);
 
     var _selector = selector;
     var element = $(selector);
@@ -35,21 +34,32 @@ d3.gantt = function(selector, options) {
     var width = element.width() - margin.right - margin.left-5;
 
 
-    var keyFunction = function(d) {
-        return d.startDate + d.taskName + d.endDate;
-    };
+    var keyFunction = (function() {
+        if (settings.mode === 'time') {
+            return  function(d) {
+                return d.startDate + d.taskName + d.endDate;
+            };
+        } else {
+            return  function(d) {
+                return d.taskName + d.scanTime;
+            };
+        }
+    })();
 
-    var rectTransform = function(d) {
-	    return "translate(" + x(d.startDate) + "," + y(d.taskName) + ")";
-    };
+    var rectTransform = (function() {
+        if (settings.mode === 'time') {
+            return  function(d) {
+	            return "translate(" + x(d.startDate) + "," + y(d.taskName) + ")";
+            };
+        } else {
+            return  function(d) {
+                var str = "translate(" + x(d.scanTime) + "," + y(d.taskName) + ")";
+                return "translate(" + x(d.scanTime) + "," + y(d.taskName) + ")";
+            };
+        }
+    })();
 
-    var x = d3.time.scale().domain(settings.timeDomain).range([ 0, width ]).clamp(true);
-    var y = d3.scale.ordinal().domain(settings.rowLabels).rangeRoundBands([ 0, height - margin.top - margin.bottom ], .1);
-
-    var xAxis = d3.svg.axis().scale(x).orient("bottom").tickFormat(d3.time.format(settings.tickFormat)).tickSubdivide(true)
-	    .tickSize(8).tickPadding(8);
-
-    var yAxis = d3.svg.axis().scale(y).orient("left").tickSize(0);
+    var x, y;
 
     var initTimeDomain = function() {
         if (settings.timeDomainMode === FIT_TIME_DOMAIN_MODE) {
@@ -65,7 +75,7 @@ d3.gantt = function(selector, options) {
             _tasks.sort(function(a, b) {
                 return a.startDate - b.startDate;
             });
-            settingstimeDomain[0] = _tasks[0].startDate;
+            settings.timeDomain[0] = _tasks[0].startDate;
         }
     };
 
@@ -75,10 +85,8 @@ d3.gantt = function(selector, options) {
             xAxis = d3.svg.axis().scale(x).orient("bottom").tickFormat(d3.time.format(settings.tickFormat)).tickSubdivide(true)
                 .tickSize(8).tickPadding(8);
         } else {
-//            console.log("initAxis linear");
-//            console.log(timeDomainEnd);
-//            xNorm = d3.scale.linear().domain([0, timeDomainEnd]).range([0, width]);
-//            xAxis = d3.svg.axis().scale(x).orient("bottom").tickSubdivide(true).tickSize(8).tickPadding(8);
+            x = d3.scale.linear().domain(settings.linearDomain).range([0, width]);
+            xAxis = d3.svg.axis().scale(x).orient("bottom").tickSubdivide(true).tickSize(8).tickPadding(8);
         }
         y = d3.scale.ordinal().domain(settings.rowLabels).rangeRoundBands([ 0, height - margin.top - margin.bottom ], .1);
         yAxis = d3.svg.axis().scale(y).orient("left").tickSize(0);
@@ -90,44 +98,97 @@ d3.gantt = function(selector, options) {
         initAxis();
 
         var svg = d3.select(_selector)
-        .append("svg")
-        .attr("class", "chart")
-        .attr("width", width + margin.left + margin.right)
-        .attr("height", height + margin.top + margin.bottom)
-        .append("g")
+            .append("svg")
+            .attr("class", "chart")
+            .attr("width", width + margin.left + margin.right)
+            .attr("height", height + margin.top + margin.bottom)
+            .append("g")
             .attr("class", "gantt-chart")
-        .attr("width", width + margin.left + margin.right)
-        .attr("height", height + margin.top + margin.bottom)
-        .attr("transform", "translate(" + margin.left + ", " + margin.top + ")");
+            .attr("width", width + margin.left + margin.right)
+            .attr("height", height + margin.top + margin.bottom)
+            .attr("transform", "translate(" + margin.left + ", " + margin.top + ")");
 
-          svg.selectAll(".chart")
-         .data(tasks, keyFunction).enter()
-         .append("rect")
-         .attr("rx", 5)
-             .attr("ry", 5)
-         .attr("class", function(d){
-             if(settings.taskStatuses[d.status] == null){ return "bar";}
-             return settings.taskStatuses[d.status];
-             })
-         .attr("y", 0)
-         .attr("transform", rectTransform)
-         .attr("height", function(d) { return y.rangeBand()-1; })
-         .attr("width", function(d) {
-             var taskWidth = (x(d.endDate) - x(d.startDate));
-             return Math.max(taskWidth, 1);
-         });
+        svg.selectAll(".chart")
+            .data(tasks, keyFunction).enter()
+            .append("rect")
+            .attr("rx", 5)
+            .attr("ry", 5)
+            .attr("class", function(d){
+                if(settings.taskStatuses[d.status] == null){ return "bar";}
+                return settings.taskStatuses[d.status];
+            })
+            .attr("y", 0)
+            .attr("transform", rectTransform)
+            .attr("height", function(d) { return y.rangeBand()-1; })
+            .attr("width", function(d) {
+                return 1;
+            });
 
+        var xAxisLabel;
+        if (settings.mode === 'time') {
+            xAxisLabel = "Event Date";
+        } else {
+            xAxisLabel = "Scan Time (days since subject's birth)";
+        }
+
+        svg.append("g")
+            .attr("class", "x axis")
+            .attr("transform", "translate(0, " + (height - margin.top - margin.bottom) + ")")
+            .call(xAxis)
+         .append("text")
+            .attr("font-size", "16px")
+            .attr("y", 40)
+            .attr("x", 360)
+            .attr("dy", ".71em")
+            .text(xAxisLabel);
 
          svg.append("g")
-         .attr("class", "x axis")
-         .attr("transform", "translate(0, " + (height - margin.top - margin.bottom) + ")")
-         .transition()
-         .call(xAxis);
+            .attr("class", "y axis")
+            .call(yAxis)
+         .append("text")
+            .attr("font-size", "16px")
+            .attr("transform", "rotate(-90)")
+            .attr("y", -50)
+            .attr("x", -225)
+            .attr("dy", ".71em")
+            .style("text-anchor", "end")
+            .text("Subject ID");
 
-         svg.append("g").attr("class", "y axis").transition().call(yAxis);
+        var legendRectSize = 18;
+        var legendSpacing = 4;
+        var legendGroup = svg.append('g')
+            .attr('class', 'legendGroup')
+            .attr('transform','translate(-100,0)');
+
+        var legend = legendGroup.selectAll('.legend')
+                .data(settings.weightBinRanges)
+                .enter()
+                .append('g')
+                .attr('class', 'legend')
+                .attr('transform', function(d, i) {
+                    var height = legendRectSize + legendSpacing;
+                    var horz = -2 * legendRectSize;
+                    var vert = i * height;
+                    return 'translate(' + horz + ',' + vert + ')';
+                });
+
+        legend.append('rect')
+            .attr('width', legendRectSize)
+            .attr('height', legendRectSize)
+            .attr("class", function(d){ return d.bin; });
+
+        legend.append('text')
+            .attr('x', legendRectSize + legendSpacing)
+            .attr('y', legendRectSize - legendSpacing)
+            .text(function(d) { return d.start.toFixed(2) + '-' + d.end.toFixed(2) + ' kg'; });
+
+        legendGroup.append('text')
+            .attr('x', -35)
+            .attr('y', ((legendRectSize+legendSpacing) * settings.weightBinRanges.length) + (legendRectSize))
+            .attr('font-size', '14px')
+            .text('weight at scan');
 
          return gantt;
-
     };
 
     gantt.settings = function(newSettings) {
@@ -155,13 +216,7 @@ d3.gantt = function(selector, options) {
             .transition()
             .attr("y", 0)
             .attr("transform", rectTransform)
-            .attr("height", function(d) { return y.rangeBand(); })
-            .attr("width", function(d) { return (x(d.endDate) - x(d.startDate)); });
-
-        rect.transition()
-            .attr("transform", rectTransform)
-            .attr("height", function(d) { return y.rangeBand(); })
-            .attr("width", function(d) {
+            .attr("height", function(d) { return y.rangeBand(); }) .attr("width", function(d) { return (x(d.endDate) - x(d.startDate)); }); rect.transition() .attr("transform", rectTransform) .attr("height", function(d) { return y.rangeBand(); }) .attr("width", function(d) {
             return (x(d.endDate) - x(d.startDate));
 	    });
 

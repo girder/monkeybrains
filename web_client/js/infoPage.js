@@ -29,7 +29,7 @@ monkeybrainsPlugin.views.infoPageWidget = girder.View.extend({
             };
             return nTask;
         });
-        return {'tasks': normalizedTasks, 'max_days': max_date / msToDayConv};
+        return {'tasks': normalizedTasks, 'maxDays': max_date / msToDayConv};
     },
 
     createGanttInput: function (scans) {
@@ -82,6 +82,16 @@ monkeybrainsPlugin.views.infoPageWidget = girder.View.extend({
 
         var subjectid_to_dob = {};
         var weight_range = max_weight - min_weight;
+        var bin_size = weight_range/8;
+        var bin_start = min_weight;
+        var bin_end = min_weight + bin_size;
+        var weightBinRanges = [];
+        for(var i = 0; i < 8; i++) {
+            var bin = 'scan-weight-' + (i+1);
+            weightBinRanges.push({'bin': bin, 'start': bin_start, 'end': bin_end });
+            bin_start = bin_end;
+            bin_end += bin_size;
+        }
         for(var i = 0; i < subject_ids.length; i++) {
             var subject_id = subject_ids[i];
             var dob_start = subjects[subject_id]['dob'];
@@ -97,7 +107,6 @@ monkeybrainsPlugin.views.infoPageWidget = girder.View.extend({
                 // bin weight between 1 and 8
                 var normalized = (scan_weight - min_weight) / weight_range;
                 var rounded = Math.round(normalized*8);
-                // move 0 to 1
                 rounded = Math.max(rounded, 1);
                 var status = 'scan-weight-' + rounded;
                 var scan_task = {
@@ -129,7 +138,8 @@ monkeybrainsPlugin.views.infoPageWidget = girder.View.extend({
             'taskStatuses': taskStatuses,
             'timeDomain': timeDomain,
             'normalizedTasks': normalizedScans.tasks,
-            'max_days_normalized': normalizedScans.max_days
+            'linearDomain': [0, normalizedScans.maxDays],
+            'weightBinRanges': weightBinRanges
         };
         return gantt;
     },
@@ -138,7 +148,6 @@ monkeybrainsPlugin.views.infoPageWidget = girder.View.extend({
         console.log("infoPageWidget initialize");
         this.model = settings.model;
         this.access = settings.access;
-        console.log(settings);
         this.model.on('change', function () {
             this.render();
         }, this);
@@ -162,18 +171,25 @@ monkeybrainsPlugin.views.infoPageWidget = girder.View.extend({
                 }).done(_.bind(function (resp) {
                     ganttData = this.createGanttInput(resp);
                     // create a gantt chart
-                   //gantt.mode('linear');
-            //'normalizedTasks': normalizedScans.tasks,
-            //'max_days_normalized': normalizedScans.max_days
-                    var timeDisplayOptions = {
+                    //gantt.mode('linear');
+                    //var timeDisplayOptions = {
+                        //'rowLabels': ganttData.subject_ids,
+                        //'mode': 'time',
+                        //'timeDomainMode': 'fixed',
+                        //'timeDomain': ganttData.timeDomain,
+                        //'taskStatuses': ganttData.taskStatuses
+                    //};
+                    //var gantt = d3.gantt('.g-collection-infopage-gantt', timeDisplayOptions);
+                    //gantt(ganttData.tasks);
+                    var linearDisplayOptions = {
                         'rowLabels': ganttData.subject_ids,
-                        'mode': 'time',
-                        'timeDomainMode': 'fixed',
-                        'timeDomain': ganttData.timeDomain,
-                        'taskStatuses': ganttData.taskStatuses
+                        'mode': 'linear',
+                        'linearDomain': ganttData.linearDomain,
+                        'taskStatuses': ganttData.taskStatuses,
+                        'weightBinRanges': ganttData.weightBinRanges
                     }
-                    var gantt = d3.gantt('.g-collection-infopage-gantt', timeDisplayOptions);
-                    gantt(ganttData.tasks);
+                    var gantt = d3.gantt('.g-collection-infopage-gantt', linearDisplayOptions);
+                    gantt(ganttData.normalizedTasks);
                 }, this)).error(_.bind(function (err) {
                     console.log("error getting datasetEvents");
                     console.log(err);
