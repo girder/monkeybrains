@@ -4,7 +4,7 @@ var monkeybrainsPlugin = {
 
 monkeybrainsPlugin.views.infoPageWidget = girder.View.extend({
 
-    createGanttInput: function (scans) {
+   createGanttInput: function (scans) {
         // data munging
         var subjects = {};
         for(var i = 0; i < scans.length; i++) {
@@ -54,6 +54,18 @@ monkeybrainsPlugin.views.infoPageWidget = girder.View.extend({
 
         var subjectid_to_dob = {};
         var weight_range = max_weight - min_weight;
+        var bin_size = weight_range/8;
+        var bin_start = min_weight;
+        var bin_end = min_weight + bin_size;
+        var weightBinRanges = [];
+        for(var i = 0; i < 8; i++) {
+            var bin = 'scan-weight-' + (i+1);
+            weightBinRanges.push({'bin': bin, 'start': bin_start, 'end': bin_end });
+            bin_start = bin_end;
+            bin_end += bin_size;
+        }
+        var maxScanAgeDays = null;
+        var msToDayConv = 1000 * 60 * 60 * 24;
         for(var i = 0; i < subject_ids.length; i++) {
             var subject_id = subject_ids[i];
             var dob_start = subjects[subject_id]['dob'];
@@ -62,25 +74,39 @@ monkeybrainsPlugin.views.infoPageWidget = girder.View.extend({
             subjectid_to_dob[subject_id] = dob_start;
             var dob_task = {"startDate": dob_start, "endDate": dob_end, "taskName": subject_id, "status": "dob"};
             tasks.push(dob_task);
-            for(var j = 0; j < subjects[subject_id]['scans'].length; j++) {
-                var scan_start = subjects[subject_id]['scans'][j]['date'];
+            var scans = subjects[subject_id]['scans'];
+            scans = _.uniq(scans, false, function(obj) {
+                return obj.date.toUTCString() + obj.weight;
+            });
+            for(var j = 0; j < scans.length; j++) {
+                var scan_start = scans[j]['date'];
                 var scan_end = new Date(scan_start); scan_end.setHours(scan_end.getHours() + 24);
-                var scan_weight = subjects[subject_id]['scans'][j]['weight'];
+                var scan_weight = scans[j]['weight'];
                 // bin weight between 1 and 8
                 var normalized = (scan_weight - min_weight) / weight_range;
                 var rounded = Math.round(normalized*8);
-                // move 0 to 1
                 rounded = Math.max(rounded, 1);
                 var status = 'scan-weight-' + rounded;
+                // normalize scan events to be relative to DOB
+                var dob = subjectid_to_dob[subject_id];
+                var scanOffsetMS = scan_start - dob;
+                var scanAgeDays = scanOffsetMS / msToDayConv;
+                maxScanAgeDays = Math.max(maxScanAgeDays, scanAgeDays);
                 var scan_task = {
                     "startDate": scan_start,
                     "endDate": scan_end,
                     "taskName": subject_id,
                     "scanWeight": scan_weight,
-                    "status": status};
+                    "status": status,
+                    "scanAge": scanAgeDays
+                };
                 tasks.push(scan_task);
             }
         }
+        // remove dob events
+        var normalizedTasks = _.filter(tasks, function (task) {
+            return task.status !== 'dob';
+        });
         var taskStatuses = {'dob': 'birth',
                             'scan-weight-1': 'scan-weight-1',
                             'scan-weight-2': 'scan-weight-2',
@@ -94,15 +120,21 @@ monkeybrainsPlugin.views.infoPageWidget = girder.View.extend({
         subject_ids.sort(function(a, b) {
             return a.localeCompare(b);
         });
-        var gantt = {'subject_ids': subject_ids, 'tasks': tasks, 'taskStatuses': taskStatuses, 'timeDomain': timeDomain};
+        var gantt = {
+            'subject_ids': subject_ids,
+            'tasks': tasks,
+            'taskStatuses': taskStatuses,
+            'timeDomain': timeDomain,
+            'normalizedTasks': normalizedTasks,
+            'linearDomain': [0, maxScanAgeDays],
+            'weightBinRanges': weightBinRanges
+        };
         return gantt;
     },
 
     initialize: function (settings) {
-        console.log("infoPageWidget initialize");
         this.model = settings.model;
         this.access = settings.access;
-        console.log(settings);
         this.model.on('change', function () {
             this.render();
         }, this);
@@ -114,7 +146,6 @@ monkeybrainsPlugin.views.infoPageWidget = girder.View.extend({
         }).done(_.bind(function (resp) {
             var infoPage = resp.infoPage;
             if (infoPage && infoPage !== '') {
-                console.log('render template now');
                 $('.g-collection-header').after(girder.templates.collection_infopage());
                 var infoPageContainer = $('.g-collection-infopage-markdown');
                 girder.renderMarkdown(infoPage, infoPageContainer);
@@ -125,14 +156,19 @@ monkeybrainsPlugin.views.infoPageWidget = girder.View.extend({
                     error: null
                 }).done(_.bind(function (resp) {
                     ganttData = this.createGanttInput(resp);
-                    // create a gantt chart
-                    var tickFormat = "%m-%y";
-                    var gantt = d3.gantt('.g-collection-infopage-gantt').taskTypes(ganttData.subject_ids);
-                    gantt.taskStatus(ganttData.taskStatuses);
-                    gantt.timeDomain(ganttData.timeDomain);
-                    gantt.tickFormat(tickFormat).timeDomainMode("fixed");
-                    gantt(ganttData.tasks);
-
+                    var settings = {
+                        'rowLabels': ganttData.subject_ids,
+                        'timeDomainMode': 'fixed',
+                        'timeDomain': ganttData.timeDomain,
+                        'taskStatuses': ganttData.taskStatuses,
+                        'weightBinRanges': ganttData.weightBinRanges,
+                        'linearDomain': ganttData.linearDomain,
+                        'tasks': ganttData.tasks,
+                        'normalizedTasks': ganttData.normalizedTasks
+                    };
+                    var gantt = d3.gantt('.g-collection-infopage-gantt', settings);
+                    // display gantt chart in calendar mode
+                    gantt('time');
                 }, this)).error(_.bind(function (err) {
                     console.log("error getting datasetEvents");
                     console.log(err);
@@ -147,15 +183,12 @@ monkeybrainsPlugin.views.infoPageWidget = girder.View.extend({
     },
 
     render: function() {
-        console.log("infoPageWidget render");
     }
 
 });
 
 girder.wrap(girder.views.CollectionView, 'render', function(render) {
-    console.log('infoPageWidget wrapped pre-render');
     render.call(this);
-    console.log('infoPageWidget wrapped post-render');
     this.infoPageWidget = new monkeybrainsPlugin.views.infoPageWidget({
         model: this.model,
         access: this.access,
