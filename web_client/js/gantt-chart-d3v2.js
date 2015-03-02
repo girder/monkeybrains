@@ -15,12 +15,13 @@ d3.gantt = function(selector, options) {
         'tickFormat': '%m-%y',
         'taskStatuses': [],
         'rowLabels': [],
-        'weightBinRanges': []
+        'weightBinRanges': [],
+        'tasks': [],
+        'normalizedTasks': []
     };
 
     var settings = options;
     _.defaults(settings, defaults);
-
     var _selector = selector;
     var element = $(selector);
     var margin = {
@@ -34,30 +35,31 @@ d3.gantt = function(selector, options) {
     var width = element.width() - margin.right - margin.left-5;
 
 
-    var keyFunction = (function() {
+    var keyFunction;
+    function getKeyFunction() {
         if (settings.mode === 'time') {
             return  function(d) {
                 return d.startDate + d.taskName + d.endDate;
             };
         } else {
             return  function(d) {
-                return d.taskName + d.scanTime;
+                return d.taskName + d.scanAge;
             };
         }
-    })();
+    };
 
-    var rectTransform = (function() {
+    var rectTransform;
+    function getRectTransform() {
         if (settings.mode === 'time') {
             return  function(d) {
 	            return "translate(" + x(d.startDate) + "," + y(d.taskName) + ")";
             };
         } else {
             return  function(d) {
-                var str = "translate(" + x(d.scanTime) + "," + y(d.taskName) + ")";
-                return "translate(" + x(d.scanTime) + "," + y(d.taskName) + ")";
+                return "translate(" + x(d.scanAge) + "," + y(d.taskName) + ")";
             };
         }
-    })();
+    };
 
     var x, y;
 
@@ -92,12 +94,43 @@ d3.gantt = function(selector, options) {
         yAxis = d3.svg.axis().scale(y).orient("left").tickSize(0);
     };
 
-    function gantt(tasks) {
-        _tasks = tasks;
-        initTimeDomain();
-        initAxis();
+    function gantt(mode) {
+        var tooltip = d3.select('.g-collection-infopage-gantt')
+            .append('div')
+            .attr('class', 'infopage-gantt-tooltip');
+        tooltip.append('div')
+            .attr('class', 'gantt-tooltip-event');
+        tooltip.append('div')
+            .attr('class', 'gantt-tooltip-date');
 
-        var svg = d3.select(_selector)
+        var tooltipData = tooltip.append('div')
+            .attr('class', 'gantt-tooltip-data');
+
+        var tooltipSubject = tooltipData.append('div')
+            .attr('class', 'gantt-tooltip-subject gantt-tooltip-data-row');
+        tooltipSubject.append('span')
+            .attr('class', 'gantt-tooltip-subject-key gantt-tooltip-key');
+        tooltipSubject.select('.gantt-tooltip-subject-key').text('Subject');
+        tooltipSubject.append('span')
+            .attr('class', 'gantt-tooltip-subject-value gantt-tooltip-value');
+
+        var tooltipScanWeight = tooltipData.append('div')
+            .attr('class', 'gantt-tooltip-scan-weight gantt-tooltip-data-row gantt-tooltip-scan');
+        tooltipScanWeight.append('span')
+            .attr('class', 'gantt-tooltip-scan-weight-key gantt-tooltip-key');
+        tooltipScanWeight.select('.gantt-tooltip-scan-weight-key').text('Weight (kg)');
+        tooltipScanWeight.append('span')
+            .attr('class', 'gantt-tooltip-scan-weight-value gantt-tooltip-value');
+
+        var tooltipScanAge = tooltipData.append('div')
+            .attr('class', 'gantt-tooltip-scan-age gantt-tooltip-data-row gantt-tooltip-scan');
+        tooltipScanAge.append('span')
+            .attr('class', 'gantt-tooltip-scan-age-key gantt-tooltip-key');
+        tooltipScanAge.select('.gantt-tooltip-scan-age-key').text('Age (days)');
+        tooltipScanAge.append('span')
+            .attr('class', 'gantt-tooltip-scan-age-value gantt-tooltip-value');
+
+       var svg = d3.select(_selector)
             .append("svg")
             .attr("class", "chart")
             .attr("width", width + margin.left + margin.right)
@@ -107,52 +140,6 @@ d3.gantt = function(selector, options) {
             .attr("width", width + margin.left + margin.right)
             .attr("height", height + margin.top + margin.bottom)
             .attr("transform", "translate(" + margin.left + ", " + margin.top + ")");
-
-        svg.selectAll(".chart")
-            .data(tasks, keyFunction).enter()
-            .append("rect")
-            .attr("rx", 5)
-            .attr("ry", 5)
-            .attr("class", function(d){
-                if(settings.taskStatuses[d.status] == null){ return "bar";}
-                return settings.taskStatuses[d.status];
-            })
-            .attr("y", 0)
-            .attr("transform", rectTransform)
-            .attr("height", function(d) { return y.rangeBand()-1; })
-            .attr("width", function(d) {
-                return 1;
-            });
-
-        var xAxisLabel;
-        if (settings.mode === 'time') {
-            xAxisLabel = "Event Date";
-        } else {
-            xAxisLabel = "Scan Time (days since subject's birth)";
-        }
-
-        svg.append("g")
-            .attr("class", "x axis")
-            .attr("transform", "translate(0, " + (height - margin.top - margin.bottom) + ")")
-            .call(xAxis)
-         .append("text")
-            .attr("font-size", "16px")
-            .attr("y", 40)
-            .attr("x", 360)
-            .attr("dy", ".71em")
-            .text(xAxisLabel);
-
-         svg.append("g")
-            .attr("class", "y axis")
-            .call(yAxis)
-         .append("text")
-            .attr("font-size", "16px")
-            .attr("transform", "rotate(-90)")
-            .attr("y", -50)
-            .attr("x", -225)
-            .attr("dy", ".71em")
-            .style("text-anchor", "end")
-            .text("Subject ID");
 
         var legendRectSize = 18;
         var legendSpacing = 4;
@@ -171,7 +158,6 @@ d3.gantt = function(selector, options) {
                     var vert = i * height;
                     return 'translate(' + horz + ',' + vert + ')';
                 });
-
         legend.append('rect')
             .attr('width', legendRectSize)
             .attr('height', legendRectSize)
@@ -188,42 +174,127 @@ d3.gantt = function(selector, options) {
             .attr('font-size', '14px')
             .text('weight at scan');
 
-         return gantt;
+        return gantt.redraw(settings.mode);
     };
 
     gantt.settings = function(newSettings) {
         _.defaults(settings, newSettings);
     };
 
-    gantt.redraw = function(tasks) {
-
+    gantt.redraw = function(mode) {
+        settings.mode = mode;
+        if (settings.mode === 'time') {
+            _tasks = settings.tasks;
+        } else {
+            _tasks = settings.normalizedTasks;
+        }
         initTimeDomain();
         initAxis();
+        rectTransform = getRectTransform();
+        keyFunction = getKeyFunction();
 
         var svg = d3.select("svg");
 
         var ganttChartGroup = svg.select(".gantt-chart");
-        var rect = ganttChartGroup.selectAll("rect").data(tasks, keyFunction);
 
-        rect.enter()
-            .insert("rect",":first-child")
+        var xAxisLabel;
+        var xAxisSwitchLabel;
+        if (settings.mode === 'time') {
+            xAxisLabel = "Event Date";
+            xAxisSwitchLabel = '[click to normalize by time since birth]';
+        } else {
+            xAxisLabel = "Scan Time (days since subject's birth)";
+            xAxisSwitchLabel = '[click to display calendar view]';
+        }
+
+        svg.select('.gantt-chart').select('.xaxis').remove();
+        svg.select('.gantt-chart').append("g")
+            .attr("class", "x axis xaxis")
+            .attr("transform", "translate(0, " + (height - margin.top - margin.bottom) + ")")
+            .call(xAxis)
+         .append("text")
+            .attr("font-size", "16px")
+            .attr("y", 40)
+            .attr("x", 360)
+            .attr("dy", ".71em")
+            .text(xAxisLabel);
+        svg.select('.xaxis').append("text")
+            .attr("font-size", "12px")
+            .attr("y", 40)
+            .attr("x", 660)
+            .attr("dy", ".71em")
+            .text(xAxisSwitchLabel)
+            .on('click', function() {
+                if (settings.mode === 'time') {
+                    gantt.redraw('linear');
+                } else {
+                    gantt.redraw('time');
+                }
+            });
+
+
+        svg.select('.gantt-chart').select('.yaxis').remove();
+        svg.select('.gantt-chart').append("g")
+            .attr("class", "y axis yaxis")
+            .call(yAxis)
+        .append("text")
+            .attr("font-size", "16px")
+            .attr("transform", "rotate(-90)")
+            .attr("y", -50)
+            .attr("x", -225)
+            .attr("dy", ".71em")
+            .style("text-anchor", "end")
+            .text("Subject ID");
+
+        svg.selectAll('.gantt-event').remove();
+        var tooltipOffsetX = 10;
+        var tooltipOffsetY = 10;
+        var events = svg.select('.gantt-chart').selectAll(".gantt-event")
+            .data(_tasks, keyFunction).enter()
+            .append("rect")
             .attr("rx", 5)
             .attr("ry", 5)
             .attr("class", function(d){
-            if(settings.taskStatuses[d.status] == null){ return "bar";}
-                return settings.taskStatuses[d.status];
+                if(settings.taskStatuses[d.status] == null){ return "bar";}
+                return "gantt-event "+ settings.taskStatuses[d.status];
             })
-            .transition()
             .attr("y", 0)
             .attr("transform", rectTransform)
-            .attr("height", function(d) { return y.rangeBand(); }) .attr("width", function(d) { return (x(d.endDate) - x(d.startDate)); }); rect.transition() .attr("transform", rectTransform) .attr("height", function(d) { return y.rangeBand(); }) .attr("width", function(d) {
-            return (x(d.endDate) - x(d.startDate));
-	    });
+            .attr("height", function(d) { return y.rangeBand()-1; })
+            .attr("width", function(d) {
+                return 1;
+            });
+        events.on('mouseover', function(d) {
+            var tooltip = d3.select('.infopage-gantt-tooltip');
+            date = new Date(d.startDate);
+            tooltip.select('.gantt-tooltip-date').text(date.toDateString());
+            tooltip.select('.gantt-tooltip-subject-value').text(d.taskName);
 
-        rect.exit().remove();
+            if (d.status === 'dob') {
+                tooltip.select('.gantt-tooltip-event').text('Birth Event');
+                $('.gantt-tooltip-scan').hide();
+            } else {
+                tooltip.select('.gantt-tooltip-event').text('Scan Event');
+                $('.gantt-tooltip-scan').show();
+                tooltip.select('.gantt-tooltip-scan-weight-value').text(d.scanWeight);
+                tooltip.select('.gantt-tooltip-scan-age-value').text(d.scanAge);
+            }
+            // show the tooltip offset from the event rect
+            var tooltipWidth = $('.infopage-gantt-tooltip').outerWidth();
+            var tooltipLeft;
+            if (d3.event.offsetX + tooltipOffsetX + tooltipWidth > $('.g-collection-infopage-gantt').width()) {
+                tooltipLeft = d3.event.offsetX - (tooltipOffsetX + tooltipWidth);
+            } else {
+                tooltipLeft = d3.event.offsetX + tooltipOffsetX;
+            }
+            tooltip.style('top', (d3.event.offsetY + tooltipOffsetY) + 'px')
+                .style('left', tooltipLeft + 'px');
+            $('.infopage-gantt-tooltip').show();
 
-        svg.select(".x").transition().call(xAxis);
-        svg.select(".y").transition().call(yAxis);
+        });
+        events.on('mouseout', function() {
+            $('.infopage-gantt-tooltip').hide();
+        });
 
         return gantt;
     };
