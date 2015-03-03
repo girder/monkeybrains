@@ -16,31 +16,19 @@
 #  See the License for the specific language governing permissions and
 #  limitations under the License.
 ###############################################################################
-import json
 import bson
+from girder import constants
 from girder.api import access
 from girder.api.rest import Resource, loadmodel
 from girder.api.rest import RestException
 from girder.api.describe import Description
 from girder.constants import AccessType
-
+from girder.utility.model_importer import ModelImporter
 
 INFOPAGE_FIELD = 'infoPage'
 
 
 class InfoPage(Resource):
-
-    def _filter(self, model, resource):
-        """
-        Filter a resource to include only the ordinary data and the infoPage
-        field.
-        :param model: the type of resource (e.g., user or collection)
-        :param resource: the resource document.
-        :return: filtered field of the resource with the infoPage data, if any.
-        """
-        filtered = self.model(model).filter(resource, self.getCurrentUser())
-        filtered[INFOPAGE_FIELD] = resource.get(INFOPAGE_FIELD, {})
-        return filtered
 
     def _setResourceInfoPage(self, model, resource, params):
         """
@@ -59,7 +47,8 @@ class InfoPage(Resource):
     @access.public
     @loadmodel(model='collection', level=AccessType.READ)
     def getCollectionInfoPage(self, collection, params):
-        return self._filter('collection', collection)
+        return self.model('collection').filter(collection,
+                                               self.getCurrentUser())
     getCollectionInfoPage.description = (
         Description('Get infoPage for the collection.')
         .param('id', 'The collection ID', paramType='path')
@@ -108,7 +97,6 @@ class DatasetEvents(Resource):
             raise RestException('The query parameter must be a JSON object.')
         document = \
             model.collection.group(key, condition, initial, reduce, finalize)
-        # TODO filtering, paging, permission checks
         return document
     getDatasetEvents.description = (
         Description('Get datasetEvents for the collection.')
@@ -126,3 +114,6 @@ def load(info):
     datasetEvents = DatasetEvents()
     info['apiRoot'].collection.route('GET', (':id', 'datasetEvents'),
                                      datasetEvents.getDatasetEvents)
+
+    ModelImporter.model('collection').exposeFields(
+        level=constants.AccessType.READ, fields='infoPage')
