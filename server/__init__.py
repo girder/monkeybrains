@@ -42,7 +42,7 @@ class InfoPage(Resource):
         infoPage = params['infoPage']
         resource[INFOPAGE_FIELD] = infoPage
         self.model(model).save(resource, validate=False)
-        return self._filter(model, resource)
+        return self.model(model).filter(resource, self.getCurrentUser())
 
     @access.public
     @loadmodel(model='collection', level=AccessType.READ)
