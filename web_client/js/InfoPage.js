@@ -76,6 +76,7 @@ girder.views.monkeybrains_InfoPageWidget = girder.View.extend({
             var dob_task = {'folderId': subject['folderId'], 'collectionId': subject['collectionId'], "startDate": dob_start, "endDate": dob_end, "taskName": subject_id, "status": "dob"};
             tasks.push(dob_task);
             var scans = subject['scans'];
+            var firstScanDays = null;
             for(var j = 0; j < scans.length; j++) {
                 var scan_start = scans[j]['date'];
                 var scan_end = new Date(scan_start); scan_end.setHours(scan_end.getHours() + 24);
@@ -102,6 +103,11 @@ girder.views.monkeybrains_InfoPageWidget = girder.View.extend({
                     'folderId': scans[j]['folderId']
                 };
                 tasks.push(scan_task);
+                if(firstScanDays === null) {
+                    firstScanDays = scanAgeDays;
+                }
+                firstScanDays = Math.min(firstScanDays, scanAgeDays);
+                subject['firstScanDays'] = firstScanDays;
             }
         }
         // remove dob events
@@ -117,9 +123,11 @@ girder.views.monkeybrains_InfoPageWidget = girder.View.extend({
                             'scan-weight-6': 'scan-weight-6',
                             'scan-weight-7': 'scan-weight-7',
                             'scan-weight-8': 'scan-weight-8'};
-        // sort subject_ids lexicographically
+        // sort by first scan date
         subject_ids.sort(function(a, b) {
-            return a.localeCompare(b);
+            var firstScanA = subjects[a]['firstScanDays'];
+            var firstScanB = subjects[b]['firstScanDays'];
+            return (firstScanA > firstScanB) - (firstScanA < firstScanB);
         });
         var gantt = {
             'subject_ids': subject_ids,
