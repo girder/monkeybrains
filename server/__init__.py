@@ -67,7 +67,8 @@ class DatasetEvents(Resource):
         """
         model = self.model('folder')
         # return these metadata keys
-        metadata_keys = ['folder_type', 'scan_age', 'sex', 'scan_date', 'subject_id', 'dob', 'scan_weight_kg']
+        metadata_keys = ['folder_type', 'scan_age', 'sex', 'scan_date',
+                         'subject_id', 'dob', 'scan_weight_kg']
         key_d = {'meta.'+key: 1 for key in metadata_keys}
         key_d['parentId'] = 1
         key_d['baseParentId'] = 1
@@ -97,17 +98,13 @@ def updateCollection(event):
     params = event.info['params']
     if MONKEYBRAINS_FIELD in params and MONKEYBRAINS_INFOPAGE_FIELD in params:
         model = ModelImporter.model('collection')
-        # TODO should I specify write?
         # ok to force here because rest.put.collection call requires WRITE
-        collection = model.load(params['_id'], level=AccessType.WRITE, force=True)
+        collection = model.load(params['_id'], force=True)
         infoPage = params[MONKEYBRAINS_INFOPAGE_FIELD]
         collection[MONKEYBRAINS_INFOPAGE_FIELD] = infoPage
         model.save(collection, validate=False)
         event.info['returnVal'][MONKEYBRAINS_INFOPAGE_FIELD] = infoPage
-        #print params
-        # this works, above will break edit view
-        #event.addResponse(collection)
-        #event.preventDefault()
+
 
 def load(info):
     monkeybrains = Monkeybrains()
