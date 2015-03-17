@@ -8,7 +8,7 @@ It has the following goals
   * demonstrate dataset visualization capabilities in Girder
   * target a specific Collection in Girder
   * live on a public Girder instance without intruding on other Collections
-  
+
 ## Usage
 
 Enable monkeybrains as a Girder plugin, then activate a specific Collection with the monkeybrains api call on a Collection, which you can do from Swagger.  This is intentionally hidden so that other Collections won't accidentally enable the functionality for them.

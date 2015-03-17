@@ -95,7 +95,8 @@ d3.gantt = function(selector, options) {
     };
 
     function gantt(mode) {
-        var tooltip = d3.select('.g-collection-infopage-gantt').remove()
+        $('.g-collection-infopage-gantt').empty();
+        var tooltip = d3.select('.g-collection-infopage-gantt')
             .append('div')
             .attr('class', 'infopage-gantt-tooltip');
         tooltip.append('div')
