@@ -1,5 +1,3 @@
-girder.views.monkeybrains_EditCollectionWidget = girder.View.extend({});
-
 girder.wrap(girder.views.EditCollectionWidget, 'render', function (render) {
     var view = this;
     render.call(this);
