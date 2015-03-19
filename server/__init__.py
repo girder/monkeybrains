@@ -77,7 +77,7 @@ class DatasetEvents(Resource):
         condition_d = {'baseParentId': {'$oid': collection['_id']},
                        'meta.scan_date': {'$exists': True}}
         initial = {}
-        reduce = "function (curr, result) {}"
+        reduc = "function (curr, result) {}"
         finalize = "function (curr, result) {}"
         try:
             key = bson.json_util.loads(bson.json_util.dumps(key_d))
@@ -85,7 +85,7 @@ class DatasetEvents(Resource):
         except ValueError:
             raise RestException('The query parameter must be a JSON object.')
         document = \
-            model.collection.group(key, condition, initial, reduce, finalize)
+            model.collection.group(key, condition, initial, reduc, finalize)
         return document
     getDatasetEvents.description = (
         Description('Get datasetEvents for the collection.')
