@@ -95,6 +95,7 @@ d3.gantt = function(selector, options) {
     };
 
     function gantt(mode) {
+        $('.g-collection-infopage-gantt').empty();
         var tooltip = d3.select('.g-collection-infopage-gantt')
             .append('div')
             .attr('class', 'infopage-gantt-tooltip');
@@ -291,6 +292,9 @@ d3.gantt = function(selector, options) {
                 .style('left', tooltipLeft + 'px');
             $('.infopage-gantt-tooltip').show();
 
+        });
+        events.on('click', function(d) {
+            girder.router.navigate('collection/'+d.collectionId+'/folder/'+d.folderId, {trigger: true});
         });
         events.on('mouseout', function() {
             $('.infopage-gantt-tooltip').hide();

@@ -1,45 +1,45 @@
-var monkeybrainsPlugin = {
-    views: {}
-};
-
-monkeybrainsPlugin.views.infoPageWidget = girder.View.extend({
+girder.views.monkeybrains_InfoPageWidget = girder.View.extend({
 
    createGanttInput: function (scans) {
         // data munging
+        // create a set of subjects with scans
+        // calculate limit values of dataset
+        var earliestDOB = null;
+        var latestScan = null;
+        var max_weight = null;
+        var min_weight = null;
         var subjects = {};
         for(var i = 0; i < scans.length; i++) {
             subject_id = scans[i]['meta.subject_id'];
             if(!(subject_id in subjects)) {
-                subjects[subject_id] = {'dob': new Date(scans[i]['meta.DOB']), 'scans': [] };
+                var dob = new Date(scans[i]['meta.dob']);
+                subjects[subject_id] = {'dob': dob,
+                    'sex': scans[i]['meta.sex'],
+                    'collectionId': scans[i]['baseParentId'],
+                    'folderId': scans[i]['parentId'],
+                    'scans': [] };
+                if(earliestDOB == null || dob < earliestDOB) {
+                    earliestDOB = dob;
+                }
             }
-            subjects[subject_id]['scans'].push({'date': new Date(scans[i]['meta.scan_date']), 'weight': scans[i]['meta.scan_weight_kg']});
+            var scanDate = new Date(scans[i]['meta.scan_date']);
+            var weight = scans[i]['meta.scan_weight_kg'];
+            subjects[subject_id]['scans'].push(
+                {'date': scanDate,
+                'weight': weight,
+                'collectionId': scans[i]['baseParentId'],
+                'parentFolderId': scans[i]['parentId'],
+                'folderId': scans[i]['_id']});
+            if(latestScan == null || scanDate > latestScan) {
+                latestScan = scanDate;
+            }
+            max_weight = Math.max(max_weight, weight);
+            if(min_weight === null) {
+                min_weight = max_weight;
+            }
+            min_weight = Math.min(min_weight, weight);
         }
-
-        var earliestDOB = null;
-        var latestScan = null;
         var subject_ids = Object.keys(subjects);
-        var max_weight = null;
-        var min_weight = null;
-        for(var i = 0; i < subject_ids.length; i++) {
-            var subject_id = subject_ids[i];
-            var dob = new Date(subjects[subject_id]['dob']);
-            if(earliestDOB == null || dob < earliestDOB) {
-                earliestDOB = dob;
-            }
-            for(var j = 0; j < subjects[subject_id]['scans'].length; j++) {
-                var scan = new Date(subjects[subject_id]['scans'][j]['date']);
-                if(latestScan == null || scan > latestScan) {
-                    latestScan = scan;
-                }
-                var weight = subjects[subject_id]['scans'][j]['weight'];
-                max_weight = Math.max(max_weight, weight);
-                if(min_weight === null) {
-                    min_weight = max_weight;
-                }
-                min_weight = Math.min(min_weight, weight);
-            }
-        }
-
         // set the time domain to one month before the earliest DOB and one month after the last scan
         var timeDomain = [];
         var startDate = new Date(earliestDOB);
@@ -68,16 +68,15 @@ monkeybrainsPlugin.views.infoPageWidget = girder.View.extend({
         var msToDayConv = 1000 * 60 * 60 * 24;
         for(var i = 0; i < subject_ids.length; i++) {
             var subject_id = subject_ids[i];
-            var dob_start = subjects[subject_id]['dob'];
+            var subject = subjects[subject_id];
+            var dob_start = subject['dob'];
             var dob_end = new Date(dob_start);
             dob_end.setHours(dob_end.getHours() + 24);
             subjectid_to_dob[subject_id] = dob_start;
-            var dob_task = {"startDate": dob_start, "endDate": dob_end, "taskName": subject_id, "status": "dob"};
+            var dob_task = {'folderId': subject['folderId'], 'collectionId': subject['collectionId'], "startDate": dob_start, "endDate": dob_end, "taskName": subject_id, "status": "dob"};
             tasks.push(dob_task);
-            var scans = subjects[subject_id]['scans'];
-            scans = _.uniq(scans, false, function(obj) {
-                return obj.date.toUTCString() + obj.weight;
-            });
+            var scans = subject['scans'];
+            var firstScanDays = null;
             for(var j = 0; j < scans.length; j++) {
                 var scan_start = scans[j]['date'];
                 var scan_end = new Date(scan_start); scan_end.setHours(scan_end.getHours() + 24);
@@ -98,9 +97,17 @@ monkeybrainsPlugin.views.infoPageWidget = girder.View.extend({
                     "taskName": subject_id,
                     "scanWeight": scan_weight,
                     "status": status,
-                    "scanAge": scanAgeDays
+                    "scanAge": scanAgeDays,
+                    'collectionId': scans[j]['collectionId'],
+                    'parentFolderId': scans[j]['parentFolderId'],
+                    'folderId': scans[j]['folderId']
                 };
                 tasks.push(scan_task);
+                if(firstScanDays === null) {
+                    firstScanDays = scanAgeDays;
+                }
+                firstScanDays = Math.min(firstScanDays, scanAgeDays);
+                subject['firstScanDays'] = firstScanDays;
             }
         }
         // remove dob events
@@ -116,9 +123,11 @@ monkeybrainsPlugin.views.infoPageWidget = girder.View.extend({
                             'scan-weight-6': 'scan-weight-6',
                             'scan-weight-7': 'scan-weight-7',
                             'scan-weight-8': 'scan-weight-8'};
-        // sort subject_ids lexicographically
+        // sort by first scan date
         subject_ids.sort(function(a, b) {
-            return a.localeCompare(b);
+            var firstScanA = subjects[a]['firstScanDays'];
+            var firstScanB = subjects[b]['firstScanDays'];
+            return (firstScanA > firstScanB) - (firstScanA < firstScanB);
         });
         var gantt = {
             'subject_ids': subject_ids,
@@ -134,65 +143,53 @@ monkeybrainsPlugin.views.infoPageWidget = girder.View.extend({
 
     initialize: function (settings) {
         this.model = settings.model;
-        this.access = settings.access;
-        this.model.on('change', function () {
-            this.render();
-        }, this);
-        var id = this.model.get('_id');
-        girder.restRequest({
-            path: 'collection/' + id + '/infoPage',
-            type: 'GET',
-            error: null
-        }).done(_.bind(function (resp) {
-            var infoPage = resp.infoPage;
-            if (infoPage && infoPage !== '') {
-                $('.g-collection-header').after(girder.templates.collection_infopage());
-                var infoPageContainer = $('.g-collection-infopage-markdown');
-                girder.renderMarkdown(infoPage, infoPageContainer);
-
-                girder.restRequest({
-                    path: 'collection/' + id + '/datasetEvents',
-                    type: 'GET',
-                    error: null
-                }).done(_.bind(function (resp) {
-                    ganttData = this.createGanttInput(resp);
-                    var settings = {
-                        'rowLabels': ganttData.subject_ids,
-                        'timeDomainMode': 'fixed',
-                        'timeDomain': ganttData.timeDomain,
-                        'taskStatuses': ganttData.taskStatuses,
-                        'weightBinRanges': ganttData.weightBinRanges,
-                        'linearDomain': ganttData.linearDomain,
-                        'tasks': ganttData.tasks,
-                        'normalizedTasks': ganttData.normalizedTasks
-                    };
-                    var gantt = d3.gantt('.g-collection-infopage-gantt', settings);
-                    // display gantt chart in calendar mode
-                    gantt('time');
-                }, this)).error(_.bind(function (err) {
-                    console.log("error getting datasetEvents");
-                    console.log(err);
-                }, this));
-            }
-        }, this)).error(_.bind(function (err) {
-            console.log("error getting infopage");
-            console.log(err);
-        }, this));
-
+        $('.g-collection-header').after(girder.templates.collection_infopage());
+        this.infoPageContainer = $('.g-collection-infopage-markdown');
         this.render();
     },
 
     render: function() {
-    }
+        var infoPage = this.model.get('monkeybrainsInfoPage');
+        if (infoPage && infoPage !== '') {
+            girder.renderMarkdown(infoPage, this.infoPageContainer);
+        }
+
+        var id = this.model.get('_id');
+        girder.restRequest({
+            path: 'collection/' + id + '/datasetEvents',
+            type: 'GET',
+            error: null
+        }).done(_.bind(function (resp) {
+            ganttData = this.createGanttInput(resp);
+            var settings = {
+                'rowLabels': ganttData.subject_ids,
+                'timeDomainMode': 'fixed',
+                'timeDomain': ganttData.timeDomain,
+                'taskStatuses': ganttData.taskStatuses,
+                'weightBinRanges': ganttData.weightBinRanges,
+                'linearDomain': ganttData.linearDomain,
+                'tasks': ganttData.tasks,
+                'normalizedTasks': ganttData.normalizedTasks
+            };
+            var gantt = d3.gantt('.g-collection-infopage-gantt', settings);
+            // display gantt chart in calendar mode to start
+            gantt('time');
+        }, this)).error(_.bind(function (err) {
+            console.log("error getting datasetEvents");
+            console.log(err);
+        }, this));
+     }
 
 });
 
 girder.wrap(girder.views.CollectionView, 'render', function(render) {
     render.call(this);
-    this.infoPageWidget = new monkeybrainsPlugin.views.infoPageWidget({
-        model: this.model,
-        access: this.access,
-        parentView: this
-    });
+    if (this.model.get('monkeybrains')) {
+        this.infoPageWidget = new girder.views.monkeybrains_InfoPageWidget({
+            model: this.model,
+            access: this.access,
+            parentView: this
+        });
+    }
     return this;
 });

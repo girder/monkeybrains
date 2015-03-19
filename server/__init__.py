@@ -18,6 +18,7 @@
 ###############################################################################
 import bson
 from girder import constants
+from girder import events
 from girder.api import access
 from girder.api.rest import Resource, loadmodel
 from girder.api.rest import RestException
@@ -25,45 +26,29 @@ from girder.api.describe import Description
 from girder.constants import AccessType
 from girder.utility.model_importer import ModelImporter
 
-INFOPAGE_FIELD = 'infoPage'
+MONKEYBRAINS_FIELD = 'monkeybrains'
+MONKEYBRAINS_INFOPAGE_FIELD = 'monkeybrainsInfoPage'
 
 
-class InfoPage(Resource):
-
-    def _setResourceInfoPage(self, model, resource, params):
-        """
-        Handle setting infoPage for any resource that supports them.
-        :param model: the type of resource (e.g., user or collection)
-        :param resource: the resource document.
-        :param params: the query parameters.  'infoPage' is required and used.
-        :return resource: the updated resource document.
-        """
-        self.requireParams(('infoPage', ), params)
-        infoPage = params['infoPage']
-        resource[INFOPAGE_FIELD] = infoPage
-        self.model(model).save(resource, validate=False)
-        return self.model(model).filter(resource, self.getCurrentUser())
-
-    @access.public
-    @loadmodel(model='collection', level=AccessType.READ)
-    def getCollectionInfoPage(self, collection, params):
-        return self.model('collection').filter(collection,
-                                               self.getCurrentUser())
-    getCollectionInfoPage.description = (
-        Description('Get infoPage for the collection.')
-        .param('id', 'The collection ID', paramType='path')
-        .errorResponse('ID was invalid.')
-        .errorResponse('Read permission denied on the collection.', 403))
+class Monkeybrains(Resource):
 
     @access.public
     @loadmodel(model='collection', level=AccessType.WRITE)
-    def setCollectionInfoPage(self, collection, params):
-        return self._setResourceInfoPage('collection', collection, params)
-    setCollectionInfoPage.description = (
-        Description('Set infoPage for the collection.')
+    def setCollectionMonkeybrains(self, collection, params):
+        self.requireParams((MONKEYBRAINS_FIELD, ), params)
+        monkeybrains = params[MONKEYBRAINS_FIELD]
+        if not monkeybrains:
+            del collection[MONKEYBRAINS_FIELD]
+        else:
+            collection[MONKEYBRAINS_FIELD] = monkeybrains
+        self.model('collection').save(collection, validate=False)
+        return self.model('collection').filter(collection,
+                                               self.getCurrentUser())
+    setCollectionMonkeybrains.description = (
+        Description('Set monkeybrains activation state for the collection.')
         .param('id', 'The collection ID', paramType='path')
-        .param('infoPage', 'A string of Markdown to be displayed as infopage.',
-               required=True)
+        .param('monkeybrains', 'Boolean: monkeybrains activation state for ' +
+               'this collection.', required=True, dataType='boolean')
         .errorResponse('ID was invalid.')
         .errorResponse('Write permission denied on the collection.', 403))
 
@@ -76,14 +61,18 @@ class DatasetEvents(Resource):
         Get the individual events in a dataset, which are defined as folders
         having metadata keys (scan_date, subject_id, scan_weight_kg, DOB) and
         that live under the passed in collection.
-        Handle setting infoPage for any resource that supports them.
+        Handle setting monkeybrains for any resource that supports them.
         :param collection: parent collection of sought events.
         :return resource: the loaded resource document.
         """
         model = self.model('folder')
         # return these metadata keys
-        metadata_keys = ['scan_date', 'subject_id', 'DOB', 'scan_weight_kg']
+        metadata_keys = ['folder_type', 'scan_age', 'sex', 'scan_date',
+                         'subject_id', 'dob', 'scan_weight_kg']
         key_d = {'meta.'+key: 1 for key in metadata_keys}
+        key_d['parentId'] = 1
+        key_d['baseParentId'] = 1
+        key_d['_id'] = 1
         # look at folders in this collection with the scan_date metadata key
         condition_d = {'baseParentId': {'$oid': collection['_id']},
                        'meta.scan_date': {'$exists': True}}
@@ -105,15 +94,28 @@ class DatasetEvents(Resource):
         .errorResponse('Read permission denied on the collection.', 403))
 
 
+def updateCollection(event):
+    params = event.info['params']
+    if MONKEYBRAINS_FIELD in params and MONKEYBRAINS_INFOPAGE_FIELD in params:
+        model = ModelImporter.model('collection')
+        # ok to force here because rest.put.collection call requires WRITE
+        collection = model.load(params['_id'], force=True)
+        infoPage = params[MONKEYBRAINS_INFOPAGE_FIELD]
+        collection[MONKEYBRAINS_INFOPAGE_FIELD] = infoPage
+        model.save(collection, validate=False)
+        event.info['returnVal'][MONKEYBRAINS_INFOPAGE_FIELD] = infoPage
+
+
 def load(info):
-    infoPage = InfoPage()
-    info['apiRoot'].collection.route('GET', (':id', 'infoPage'),
-                                     infoPage.getCollectionInfoPage)
-    info['apiRoot'].collection.route('PUT', (':id', 'infoPage'),
-                                     infoPage.setCollectionInfoPage)
+    monkeybrains = Monkeybrains()
+    info['apiRoot'].collection.route('PUT', (':id', 'monkeybrains'),
+                                     monkeybrains.setCollectionMonkeybrains)
     datasetEvents = DatasetEvents()
     info['apiRoot'].collection.route('GET', (':id', 'datasetEvents'),
                                      datasetEvents.getDatasetEvents)
 
     ModelImporter.model('collection').exposeFields(
-        level=constants.AccessType.READ, fields='infoPage')
+        level=constants.AccessType.READ, fields=[MONKEYBRAINS_FIELD,
+                                                 MONKEYBRAINS_INFOPAGE_FIELD])
+    events.bind('rest.put.collection/:id.after',
+                'monkeybrains_updateCollection', updateCollection)
