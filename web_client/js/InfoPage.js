@@ -18,7 +18,7 @@ girder.views.monkeybrains_InfoPageWidget = girder.View.extend({
                     'collectionId': scans[i]['baseParentId'],
                     'folderId': scans[i]['parentId'],
                     'scans': [] };
-                if(earliestDOB == null || dob < earliestDOB) {
+                if(earliestDOB === null || dob < earliestDOB) {
                     earliestDOB = dob;
                 }
             }
@@ -30,7 +30,7 @@ girder.views.monkeybrains_InfoPageWidget = girder.View.extend({
                 'collectionId': scans[i]['baseParentId'],
                 'parentFolderId': scans[i]['parentId'],
                 'folderId': scans[i]['_id']});
-            if(latestScan == null || scanDate > latestScan) {
+            if(latestScan === null || scanDate > latestScan) {
                 latestScan = scanDate;
             }
             max_weight = Math.max(max_weight, weight);
@@ -51,21 +51,24 @@ girder.views.monkeybrains_InfoPageWidget = girder.View.extend({
         // create "tasks" from the dates
         // change a DOB and a scan to be 1 day long, so they have some width
         var tasks = [];
-
         var subjectid_to_dob = {};
         var weight_range = max_weight - min_weight;
-        var bin_size = weight_range/8;
+        var NUM_WEIGHT_BINS = 8;
+        var bin_size = weight_range/NUM_WEIGHT_BINS;
         var bin_start = min_weight;
         var bin_end = min_weight + bin_size;
         var weightBinRanges = [];
-        for(var i = 0; i < 8; i++) {
+        var taskStatuses = {'dob': 'birth'};
+        for(var i = 0; i < NUM_WEIGHT_BINS; i++) {
             var bin = 'scan-weight-' + (i+1);
             weightBinRanges.push({'bin': bin, 'start': bin_start, 'end': bin_end });
             bin_start = bin_end;
             bin_end += bin_size;
+            // add a status for each bin, so that each bin gets a separate color
+            taskStatuses[bin] = bin;
         }
         var maxScanAgeDays = null;
-        var msToDayConv = 1000 * 60 * 60 * 24;
+        var msToDayConv = 1000 * 60 * 60 * 24; // 1000 ms/s 60 s/m 60 m/h 24 h/d
         for(var i = 0; i < subject_ids.length; i++) {
             var subject_id = subject_ids[i];
             var subject = subjects[subject_id];
@@ -81,9 +84,9 @@ girder.views.monkeybrains_InfoPageWidget = girder.View.extend({
                 var scan_start = scans[j]['date'];
                 var scan_end = new Date(scan_start); scan_end.setHours(scan_end.getHours() + 24);
                 var scan_weight = scans[j]['weight'];
-                // bin weight between 1 and 8
+                // bin weight
                 var normalized = (scan_weight - min_weight) / weight_range;
-                var rounded = Math.round(normalized*8);
+                var rounded = Math.round(normalized * NUM_WEIGHT_BINS);
                 rounded = Math.max(rounded, 1);
                 var status = 'scan-weight-' + rounded;
                 // normalize scan events to be relative to DOB
@@ -114,19 +117,10 @@ girder.views.monkeybrains_InfoPageWidget = girder.View.extend({
         var normalizedTasks = _.filter(tasks, function (task) {
             return task.status !== 'dob';
         });
-        var taskStatuses = {'dob': 'birth',
-                            'scan-weight-1': 'scan-weight-1',
-                            'scan-weight-2': 'scan-weight-2',
-                            'scan-weight-3': 'scan-weight-3',
-                            'scan-weight-4': 'scan-weight-4',
-                            'scan-weight-5': 'scan-weight-5',
-                            'scan-weight-6': 'scan-weight-6',
-                            'scan-weight-7': 'scan-weight-7',
-                            'scan-weight-8': 'scan-weight-8'};
         // sort by first scan date
         subject_ids.sort(function(a, b) {
-            var firstScanA = subjects[a]['firstScanDays'];
-            var firstScanB = subjects[b]['firstScanDays'];
+            var firstScanA = subjects[a]['firstScanDays'],
+                firstScanB = subjects[b]['firstScanDays'];
             return (firstScanA > firstScanB) - (firstScanA < firstScanB);
         });
         var gantt = {
@@ -150,7 +144,7 @@ girder.views.monkeybrains_InfoPageWidget = girder.View.extend({
 
     render: function() {
         var infoPage = this.model.get('monkeybrainsInfoPage');
-        if (infoPage && infoPage !== '') {
+        if (infoPage) {
             girder.renderMarkdown(infoPage, this.infoPageContainer);
         }
 
@@ -158,7 +152,7 @@ girder.views.monkeybrains_InfoPageWidget = girder.View.extend({
         girder.restRequest({
             path: 'collection/' + id + '/datasetEvents',
             type: 'GET',
-            error: null
+            error: null // TODO an error handler, is this the same as .error below
         }).done(_.bind(function (resp) {
             ganttData = this.createGanttInput(resp);
             var settings = {
