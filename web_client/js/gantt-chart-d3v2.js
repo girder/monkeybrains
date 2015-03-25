@@ -1,8 +1,13 @@
+//add some comments about usage and hardcodeing, change name
+//add some json that it expects
+//
+//
+//
 /**
  * @author Dimitry Kudrayvtsev
  * @version 2.0
  */
-d3.gantt = function(selector, options) {
+d3.gantt = function(selector, options, hierarchyUpdateCallback) {
     var FIT_TIME_DOMAIN_MODE = "fit";
     var FIXED_TIME_DOMAIN_MODE = "fixed";
     var defaultTimeDomainStart = d3.time.day.offset(new Date(),-3);
@@ -33,7 +38,6 @@ d3.gantt = function(selector, options) {
     var _tasks = [];
     var height = element.height() - margin.top - margin.bottom-5;
     var width = element.width() - margin.right - margin.left-5;
-
 
     var keyFunction;
     function getKeyFunction() {
@@ -294,7 +298,7 @@ d3.gantt = function(selector, options) {
 
         });
         events.on('click', function(d) {
-            girder.router.navigate('collection/'+d.collectionId+'/folder/'+d.folderId, {trigger: true});
+            hierarchyUpdateCallback(d.folderId);
         });
         events.on('mouseout', function() {
             $('.infopage-gantt-tooltip').hide();
