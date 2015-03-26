@@ -137,6 +137,18 @@ girder.views.monkeybrains_InfoPageWidget = girder.View.extend({
 
     initialize: function (settings) {
         this.model = settings.model;
+        this.hierarchyUpdateCallback = function(folderId) {
+            var folder = new girder.models.FolderModel();
+            folder.set({
+                _id: folderId
+            }).on('g:fetched', function () {
+                settings.parentView.hierarchyWidget.breadcrumbs = [folder];
+                settings.parentView.hierarchyWidget._fetchToRoot(folder);
+                settings.parentView.hierarchyWidget.setCurrentModel(folder, {setRoute: false});
+            }, this).on('g:error', function () {
+                console.log('error fetching folder with id '+folderId);
+            }, this).fetch();
+        };
         $('.g-collection-header').after(girder.templates.collection_infopage());
         this.infoPageContainer = $('.g-collection-infopage-markdown');
         this.render();
@@ -165,7 +177,7 @@ girder.views.monkeybrains_InfoPageWidget = girder.View.extend({
                 'tasks': ganttData.tasks,
                 'normalizedTasks': ganttData.normalizedTasks
             };
-            var gantt = d3.gantt('.g-collection-infopage-gantt', settings);
+            var gantt = d3.gantt('.g-collection-infopage-gantt', settings, this.hierarchyUpdateCallback);
             // display gantt chart in calendar mode to start
             gantt('time');
         }, this)).error(_.bind(function (err) {
