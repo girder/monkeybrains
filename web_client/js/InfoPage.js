@@ -1,6 +1,6 @@
 girder.views.monkeybrains_InfoPageWidget = girder.View.extend({
 
-   createGanttInput: function (scans) {
+    createGanttInput: function (scans) {
         // data munging
         // create a set of subjects with scans
         // calculate limit values of dataset
@@ -152,15 +152,15 @@ girder.views.monkeybrains_InfoPageWidget = girder.View.extend({
                 console.log('error fetching folder with id '+folderId);
             }, this).fetch();
         };
-        $('.g-collection-header').after(girder.templates.collection_infopage());
-        this.infoPageContainer = $('.g-collection-infopage-markdown');
         this.render();
     },
 
     render: function() {
         var infoPage = this.model.get('monkeybrainsInfoPage');
+        var infopageMarkdownContainer;
         if (infoPage) {
-            girder.renderMarkdown(infoPage, this.infoPageContainer);
+            infopageMarkdownContainer = $('.g-collection-infopage-markdown');
+            girder.renderMarkdown(infoPage, infopageMarkdownContainer);
         }
 
         var id = this.model.get('_id');
@@ -195,10 +195,12 @@ girder.views.monkeybrains_InfoPageWidget = girder.View.extend({
 girder.wrap(girder.views.CollectionView, 'render', function(render) {
     render.call(this);
     if (this.model.get('monkeybrains')) {
+        $('.g-collection-header').after(girder.templates.collection_infopage());
         this.infoPageWidget = new girder.views.monkeybrains_InfoPageWidget({
             model: this.model,
             access: this.access,
-            parentView: this
+            parentView: this,
+            el: $('.g-collection-infopage')
         });
     }
     return this;
