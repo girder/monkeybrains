@@ -22,7 +22,8 @@ d3.gantt = function(selector, options, hierarchyUpdateCallback) {
         'rowLabels': [],
         'weightBinRanges': [],
         'tasks': [],
-        'normalizedTasks': []
+        'normalizedTasks': [],
+        'subjectsFolders': {}
     };
 
     var settings = options;
@@ -250,6 +251,18 @@ d3.gantt = function(selector, options, hierarchyUpdateCallback) {
             .attr("dy", ".71em")
             .style("text-anchor", "end")
             .text("Subject ID");
+        d3.select('.yaxis')
+            .selectAll('.tick')
+            .on('mouseover', function(d) {
+                d3.select('body').style('cursor', 'pointer');
+            })
+            .on('mouseout', function(d) {
+                d3.select('body').style('cursor', 'auto');
+            })
+            .on('click', function(d) {
+                hierarchyUpdateCallback(settings.subjectsFolders[d]);
+            });
+
 
         svg.selectAll('.gantt-event').remove();
         var tooltipOffsetX = 10;
@@ -269,7 +282,9 @@ d3.gantt = function(selector, options, hierarchyUpdateCallback) {
             .attr("width", function(d) {
                 return 1;
             });
+
         events.on('mouseover', function(d) {
+            d3.select('body').style('cursor', 'pointer');
             var tooltip = d3.select('.infopage-gantt-tooltip');
             date = new Date(d.startDate);
             tooltip.select('.gantt-tooltip-date').text(date.toDateString());
@@ -302,6 +317,7 @@ d3.gantt = function(selector, options, hierarchyUpdateCallback) {
         });
         events.on('mouseout', function() {
             $('.infopage-gantt-tooltip').hide();
+            d3.select('body').style('cursor', 'auto');
         });
 
         return gantt;

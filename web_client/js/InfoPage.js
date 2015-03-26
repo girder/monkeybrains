@@ -9,6 +9,7 @@ girder.views.monkeybrains_InfoPageWidget = girder.View.extend({
         var max_weight = null;
         var min_weight = null;
         var subjects = {};
+        var subjectsFolders = {};
         for(var i = 0; i < scans.length; i++) {
             subject_id = scans[i]['meta.subject_id'];
             if(!(subject_id in subjects)) {
@@ -77,6 +78,7 @@ girder.views.monkeybrains_InfoPageWidget = girder.View.extend({
             dob_end.setHours(dob_end.getHours() + 24);
             subjectid_to_dob[subject_id] = dob_start;
             var dob_task = {'folderId': subject['folderId'], 'collectionId': subject['collectionId'], "startDate": dob_start, "endDate": dob_end, "taskName": subject_id, "status": "dob"};
+            subjectsFolders[subject_id] = subject['folderId'];
             tasks.push(dob_task);
             var scans = subject['scans'];
             var firstScanDays = null;
@@ -130,7 +132,8 @@ girder.views.monkeybrains_InfoPageWidget = girder.View.extend({
             'timeDomain': timeDomain,
             'normalizedTasks': normalizedTasks,
             'linearDomain': [0, maxScanAgeDays],
-            'weightBinRanges': weightBinRanges
+            'weightBinRanges': weightBinRanges,
+            'subjectsFolders': subjectsFolders
         };
         return gantt;
     },
@@ -175,7 +178,8 @@ girder.views.monkeybrains_InfoPageWidget = girder.View.extend({
                 'weightBinRanges': ganttData.weightBinRanges,
                 'linearDomain': ganttData.linearDomain,
                 'tasks': ganttData.tasks,
-                'normalizedTasks': ganttData.normalizedTasks
+                'normalizedTasks': ganttData.normalizedTasks,
+                'subjectsFolders': ganttData.subjectsFolders
             };
             var gantt = d3.gantt('.g-collection-infopage-gantt', settings, this.hierarchyUpdateCallback);
             // display gantt chart in calendar mode to start
