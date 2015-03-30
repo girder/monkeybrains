@@ -177,6 +177,7 @@ girder.views.monkeybrains_InfoPageWidget = girder.View.extend({
         }).done(_.bind(function (resp) {
             ganttData = this.createGanttInput(resp);
             var settings = {
+                'mode': 'linear',
                 'rowLabels': ganttData.subject_ids,
                 'timeDomainMode': 'fixed',
                 'timeDomain': ganttData.timeDomain,
@@ -189,7 +190,7 @@ girder.views.monkeybrains_InfoPageWidget = girder.View.extend({
             };
             var gantt = d3.gantt('.g-collection-infopage-gantt', settings, this.hierarchyUpdateCallback);
             // display gantt chart in calendar mode to start
-            gantt('time');
+            gantt('linear');
         }, this)).error(_.bind(function (err) {
             console.log("error getting datasetEvents");
             console.log(err);
