@@ -32,6 +32,7 @@ girder.views.monkeybrains_InfoPageWidget = girder.View.extend({
             var weight = scans[i]['meta.scan_weight_kg'];
             subjects[subject_id].scans.push({
                 date: scanDate,
+                sex: scans[i]['meta.sex'],
                 weight: weight,
                 collectionId: scans[i].baseParentId,
                 parentFolderId: scans[i].parentId,
@@ -84,6 +85,7 @@ girder.views.monkeybrains_InfoPageWidget = girder.View.extend({
             dob_end.setHours(dob_end.getHours() + 24);
             subjectid_to_dob[subject_id] = dob_start;
             var dob_task = {
+                sex: subject.sex,
                 folderId: subject.folderId,
                 collectionId: subject.collectionId,
                 startDate: dob_start,
@@ -110,6 +112,7 @@ girder.views.monkeybrains_InfoPageWidget = girder.View.extend({
                 var scanAgeDays = scanOffsetMS / msToDayConv;
                 maxScanAgeDays = Math.max(maxScanAgeDays, scanAgeDays);
                 var scan_task = {
+                    sex: subject.sex,
                     startDate: scan_start,
                     endDate: scan_end,
                     taskName: subject_id,

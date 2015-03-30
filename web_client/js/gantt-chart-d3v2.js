@@ -146,8 +146,8 @@ d3.gantt = function (selector, options, hierarchyUpdateCallback) {
             .attr('height', height + margin.top + margin.bottom)
             .attr('transform', 'translate(' + margin.left + ', ' + margin.top + ')');
 
-        var legendRectSize = 18;
-        var legendSpacing = 4;
+        var legendRectSize = 14;
+        var legendSpacing = 3;
         var legendGroup = svg.append('g')
             .attr('class', 'legendGroup')
             .attr('transform', 'translate(-100,0)');
@@ -178,6 +178,42 @@ d3.gantt = function (selector, options, hierarchyUpdateCallback) {
             .attr('y', ((legendRectSize + legendSpacing) * settings.weightBinRanges.length) + (legendRectSize))
             .attr('font-size', '14px')
             .text('weight at scan');
+
+        legendGroup.append('rect')
+            .attr('width', legendRectSize)
+            .attr('height', legendRectSize)
+            .attr('x', -28)
+            .attr('y', ((legendRectSize + legendSpacing + 1) * settings.weightBinRanges.length) + (legendRectSize))
+            .attr('class', 'birth');
+
+        legendGroup.append('text')
+            .attr('x', -28 + legendRectSize + legendSpacing)
+            .attr('y', ((legendRectSize + (legendSpacing * 2)) * settings.weightBinRanges.length) + (3 * legendRectSize / 4))
+            .attr('font-size', '14px')
+            .text('birth event');
+
+        legendGroup.append('circle')
+            .attr('cx', -21)
+            .attr('cy', ((legendRectSize + (legendSpacing * 2)) * settings.weightBinRanges.length) + (1.5 * legendRectSize))
+            .attr('r', 5);
+
+        legendGroup.append('text')
+            .attr('x', -28 + legendRectSize + legendSpacing)
+            .attr('y', ((legendRectSize + (legendSpacing * 2)) * settings.weightBinRanges.length) + (1.75 * legendRectSize))
+            .attr('font-size', '14px')
+            .text('male');
+
+        legendGroup.append('path')
+            .attr('d', 'M-1 6L 11 6 M5 0 L5 12') // forms a plus sign
+            .attr('transform', 'translate(-26, 190)')
+            .style('stroke-width', '4')
+            .style('stroke', 'black');
+
+        legendGroup.append('text')
+            .attr('x', -28 + legendRectSize + legendSpacing)
+            .attr('y', ((legendRectSize + (legendSpacing * 2)) * settings.weightBinRanges.length) + (2.75 * legendRectSize))
+            .attr('font-size', '14px')
+            .text('female');
 
         return gantt.redraw(settings.mode);
     };
@@ -261,26 +297,9 @@ d3.gantt = function (selector, options, hierarchyUpdateCallback) {
                 hierarchyUpdateCallback(settings.subjectsFolders[d]);
             });
 
-        svg.selectAll('.gantt-event').remove();
         var tooltipOffsetX = 10;
         var tooltipOffsetY = 10;
-        var events = svg.select('.gantt-chart').selectAll('.gantt-event')
-            .data(_tasks, keyFunction).enter()
-            .append('rect')
-            .attr('rx', 5)
-            .attr('ry', 5)
-            .attr('class', function (d) {
-                if (settings.taskStatuses[d.status] === null) { return 'bar'; }
-                return 'gantt-event ' + settings.taskStatuses[d.status];
-            })
-            .attr('y', 0)
-            .attr('transform', rectTransform)
-            .attr('height', function (d) { return y.rangeBand() - 1; })
-            .attr('width', function (d) {
-                return 1;
-            });
-
-        events.on('mouseover', function (d) {
+        var eventMouseover = function (d) {
             d3.select('body').style('cursor', 'pointer');
             var tooltip = d3.select('.infopage-gantt-tooltip');
             var date = new Date(d.startDate);
@@ -308,14 +327,46 @@ d3.gantt = function (selector, options, hierarchyUpdateCallback) {
                 .style('left', tooltipLeft + 'px');
             $('.infopage-gantt-tooltip').show();
 
-        });
-        events.on('click', function (d) {
-            hierarchyUpdateCallback(d.folderId);
-        });
-        events.on('mouseout', function () {
+        };
+
+        var eventMouseout = function (d) {
             $('.infopage-gantt-tooltip').hide();
             d3.select('body').style('cursor', 'auto');
-        });
+        };
+
+        var eventClick = function (d) {
+            hierarchyUpdateCallback(d.folderId);
+        };
+
+        var sexSortedEvents = _.groupBy(_tasks, function (event) { return event.sex; });
+
+        svg.selectAll('.female-event').remove();
+        var femaleEvents = svg.select('.gantt-chart').selectAll('.female-event')
+            .data(sexSortedEvents.F, keyFunction).enter()
+            .append('path')
+            .attr('d', 'M-1 6L 11 6 M5 0 L5 12') // forms a plus sign
+            .attr('transform', rectTransform)
+            .attr('class', function (d) {
+                return 'female-event ' + settings.taskStatuses[d.status];
+            })
+            .on('click', eventClick)
+            .on('mouseout', eventMouseout)
+            .on('mouseover', eventMouseover);
+
+        svg.selectAll('.male-event').remove();
+        var maleEvents = svg.select('.gantt-chart').selectAll('.male-event')
+            .data(sexSortedEvents.M, keyFunction).enter()
+            .append('circle')
+            .attr('cx', 5)
+            .attr('cy', 5)
+            .attr('r', 5)
+            .attr('class', function (d) {
+                return 'male-event ' + settings.taskStatuses[d.status];
+            })
+            .on('click', eventClick)
+            .on('mouseout', eventMouseout)
+            .on('mouseover', eventMouseover)
+            .attr('transform', rectTransform);
 
         return gantt;
     };
