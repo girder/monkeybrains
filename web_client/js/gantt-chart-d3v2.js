@@ -57,11 +57,11 @@ d3.gantt = function (selector, options, hierarchyUpdateCallback) {
     var getRectTransform = function () {
         if (settings.mode === 'time') {
             return function (d) {
-                return 'translate(' + x(d.startDate) + ',' + y(d.taskName) + ')';
+                return 'translate(' + (x(d.startDate) - 8) + ',' + y(d.taskName) + ')';
             };
         } else {
             return function (d) {
-                return 'translate(' + x(d.scanAge) + ',' + y(d.taskName) + ')';
+                return 'translate(' + (x(d.scanAge)  - 8) + ',' + y(d.taskName) + ')';
             };
         }
     };
