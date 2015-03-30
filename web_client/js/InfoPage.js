@@ -141,22 +141,16 @@ girder.views.monkeybrains_InfoPageWidget = girder.View.extend({
     initialize: function (settings) {
         this.model = settings.model;
         this.hierarchyUpdateCallback = function(folderId) {
-            var fragmentParts = Backbone.history.fragment.split('/');
-            if (_.indexOf(fragmentParts, 'vanity') > -1) {
-                girder.router.navigate('collection/'+fragmentParts[1]+'/folder/'+folderId, {trigger: true});
-            }
-            else {
-                var folder = new girder.models.FolderModel();
-                folder.set({
-                    _id: folderId
-                }).on('g:fetched', function () {
-                    settings.parentView.hierarchyWidget.breadcrumbs = [folder];
-                    settings.parentView.hierarchyWidget._fetchToRoot(folder);
-                    settings.parentView.hierarchyWidget.setCurrentModel(folder, {setRoute: false});
-                }, this).on('g:error', function () {
-                    console.log('error fetching folder with id '+folderId);
-                }, this).fetch();
-            }
+            var folder = new girder.models.FolderModel();
+            folder.set({
+                _id: folderId
+            }).on('g:fetched', function () {
+                settings.parentView.hierarchyWidget.breadcrumbs = [folder];
+                settings.parentView.hierarchyWidget._fetchToRoot(folder);
+                settings.parentView.hierarchyWidget.setCurrentModel(folder, {setRoute: false});
+            }, this).on('g:error', function () {
+                console.log('error fetching folder with id '+folderId);
+            }, this).fetch();
         };
         this.render();
     },
@@ -211,19 +205,4 @@ girder.wrap(girder.views.CollectionView, 'render', function(render) {
         });
     }
     return this;
-});
-
-girder.router.route('collection/:id/vanity', 'collectionVanity', function(collectionId, params) {
-    var collection = new girder.models.CollectionModel();
-    collection.set({
-        _id: collectionId
-    }).on('g:fetched', function () {
-        girder.events.trigger('g:navigateTo', girder.views.CollectionView, _.extend({
-            collection: collection
-        }, params || {}), {layout: girder.Layout.EMPTY});
-        $('.g-collection-header').hide();
-        $('.g-collection-hierarchy-container').hide();
-    }, this).on('g:error', function () {
-        girder.router.navigate('/collection/'+collectionId, {trigger: true});
-    }, this).fetch();
 });
