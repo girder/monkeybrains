@@ -182,7 +182,7 @@ girder.views.monkeybrains_InfoPageWidget = girder.View.extend({
         var id = this.model.get('_id');
         girder.restRequest({
             path: 'collection/' + id + '/datasetEvents',
-            type: 'GET',
+            type: 'GET'
         }).done(_.bind(function (resp) {
             var longitudeData = this.createLongitudeInput(resp);
             var settings = {
