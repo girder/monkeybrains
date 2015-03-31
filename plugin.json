@@ -1,6 +1,6 @@
 {
 "name": "Monkeybrains",
 "description": "Provides a customized view of a longitudinal dataset stored in a community",
-"version": "0.1.0",
+"version": "0.1.1",
 "dependencies": ["mongo_search"]
 }
