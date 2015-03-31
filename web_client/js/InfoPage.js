@@ -198,7 +198,7 @@ girder.views.monkeybrains_InfoPageWidget = girder.View.extend({
                 subjectsFolders: longitudeData.subjectsFolders
             };
             var longitude = d3.longitude('.g-collection-infopage-longitude', settings, this.hierarchyUpdateCallback);
-            // display longitude chart in calendar mode to start
+            // display longitude chart in scan age display to start
             longitude('linear');
         }, this)).error(_.bind(function (err) {
             console.log('error getting datasetEvents');
