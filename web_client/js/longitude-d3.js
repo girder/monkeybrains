@@ -1,11 +1,6 @@
-//add some comments about usage and hardcodeing, change name
-//add some json that it expects
-//
-//
-//
 /**
- * @author Dimitry Kudrayvtsev
- * @version 2.0
+ * This longitudinal chart is based on the d3 gantt chart v2.0 originally
+ * created by author Dimitry Kudrayvtsev.
  */
 d3.longitude = function (selector, options, hierarchyUpdateCallback) {
     var FIT_TIME_DOMAIN_MODE = 'fit';
@@ -19,11 +14,17 @@ d3.longitude = function (selector, options, hierarchyUpdateCallback) {
         timeDomainMode: FIT_TIME_DOMAIN_MODE,
         tickFormat: '%m-%y',
         taskStatuses: [],
-        rowLabels: [],
+        // {"dob":"birth","scan-weight-1":"scan-weight-1","scan-weight-2":"scan-weight-2","scan-weight-3":"scan-weight-3","scan-weight-4":"scan-weight-4","scan-weight-5":"scan-weight-5","scan-weight-6":"scan-weight-6","scan-weight-7":"scan-weight-7","scan-weight-8":"scan-weight-8"}
+        rowLabels: [], // subject ids
         weightBinRanges: [],
-        tasks: [],
+        // {"bin":"scan-weight-1","start":0.535,"end":1.151875},{"bin":"scan-weight-2","start":1.151875,"end":1.7687499999999998},{"bin":"scan-weight-3","start":1.7687499999999998,"end":2.3856249999999997},{"bin":"scan-weight-4","start":2.3856249999999997,"end":3.0024999999999995},{"bin":"scan-weight-5","start":3.0024999999999995,"end":3.6193749999999993},{"bin":"scan-weight-6","start":3.6193749999999993,"end":4.236249999999999},{"bin":"scan-weight-7","start":4.236249999999999,"end":4.8531249999999995},{"bin":"scan-weight-8","start":4.8531249999999995,"end":5.47}]
+        tasks: [], //
+        // example
+        // {"sex":"F","folderId":"550702610640fd09bf7d6f54","collectionId":"550701fd0640fd09bf7d6f51","startDate":"2010-06-06T00:00:00.000Z","endDate":"2010-06-07T00:00:00.000Z","taskName":"001","status":"dob"}
         normalizedTasks: [],
-        subjectsFolders: {}
+        // example
+        // {"sex":"F","startDate":"2011-06-01T00:00:00.000Z","endDate":"2011-06-02T00:00:00.000Z","taskName":"001","scanWeight":1.9,"status":"scan-weight-2","scanAge":360,"collectionId":"550701fd0640fd09bf7d6f51","parentFolderId":"550702610640fd09bf7d6f54","folderId":"550702610640fd09bf7d6f55"}
+        subjectsFolders: {} // mapping of subject id to folderId of that subject's top level folder
     };
 
     var settings = options;
