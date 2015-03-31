@@ -183,7 +183,6 @@ girder.views.monkeybrains_InfoPageWidget = girder.View.extend({
         girder.restRequest({
             path: 'collection/' + id + '/datasetEvents',
             type: 'GET',
-            error: null // TODO an error handler, is this the same as .error below
         }).done(_.bind(function (resp) {
             var longitudeData = this.createLongitudeInput(resp);
             var settings = {
