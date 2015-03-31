@@ -1,6 +1,6 @@
 girder.views.monkeybrains_InfoPageWidget = girder.View.extend({
 
-    createGanttInput: function (scans) {
+    createLongitudeInput: function (scans) {
         // data munging
         // create a set of subjects with scans
         // calculate limit values of dataset
@@ -141,7 +141,7 @@ girder.views.monkeybrains_InfoPageWidget = girder.View.extend({
                 firstScanB = subjects[b].firstScanDays;
             return (firstScanA > firstScanB) - (firstScanA < firstScanB);
         });
-        var gantt = {
+        var longitude = {
             subject_ids: subject_ids,
             tasks: tasks,
             taskStatuses: taskStatuses,
@@ -151,7 +151,7 @@ girder.views.monkeybrains_InfoPageWidget = girder.View.extend({
             weightBinRanges: weightBinRanges,
             subjectsFolders: subjectsFolders
         };
-        return gantt;
+        return longitude;
     },
 
     initialize: function (settings) {
@@ -185,22 +185,22 @@ girder.views.monkeybrains_InfoPageWidget = girder.View.extend({
             type: 'GET',
             error: null // TODO an error handler, is this the same as .error below
         }).done(_.bind(function (resp) {
-            var ganttData = this.createGanttInput(resp);
+            var longitudeData = this.createLongitudeInput(resp);
             var settings = {
                 mode: 'linear',
-                rowLabels: ganttData.subject_ids,
+                rowLabels: longitudeData.subject_ids,
                 timeDomainMode: 'fixed',
-                timeDomain: ganttData.timeDomain,
-                taskStatuses: ganttData.taskStatuses,
-                weightBinRanges: ganttData.weightBinRanges,
-                linearDomain: ganttData.linearDomain,
-                tasks: ganttData.tasks,
-                normalizedTasks: ganttData.normalizedTasks,
-                subjectsFolders: ganttData.subjectsFolders
+                timeDomain: longitudeData.timeDomain,
+                taskStatuses: longitudeData.taskStatuses,
+                weightBinRanges: longitudeData.weightBinRanges,
+                linearDomain: longitudeData.linearDomain,
+                tasks: longitudeData.tasks,
+                normalizedTasks: longitudeData.normalizedTasks,
+                subjectsFolders: longitudeData.subjectsFolders
             };
-            var gantt = d3.gantt('.g-collection-infopage-gantt', settings, this.hierarchyUpdateCallback);
-            // display gantt chart in calendar mode to start
-            gantt('linear');
+            var longitude = d3.longitude('.g-collection-infopage-longitude', settings, this.hierarchyUpdateCallback);
+            // display longitude chart in calendar mode to start
+            longitude('linear');
         }, this)).error(_.bind(function (err) {
             console.log('error getting datasetEvents');
             console.log(err);

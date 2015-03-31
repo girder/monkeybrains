@@ -7,7 +7,7 @@
  * @author Dimitry Kudrayvtsev
  * @version 2.0
  */
-d3.gantt = function (selector, options, hierarchyUpdateCallback) {
+d3.longitude = function (selector, options, hierarchyUpdateCallback) {
     var FIT_TIME_DOMAIN_MODE = 'fit';
     var FIXED_TIME_DOMAIN_MODE = 'fixed';
     var defaultTimeDomainStart = d3.time.day.offset(new Date(), -3);
@@ -98,42 +98,42 @@ d3.gantt = function (selector, options, hierarchyUpdateCallback) {
         yAxis = d3.svg.axis().scale(y).orient('left').tickSize(0);
     };
 
-    var gantt = function (mode) {
-        $('.g-collection-infopage-gantt').empty();
-        var tooltip = d3.select('.g-collection-infopage-gantt')
+    var longitude = function (mode) {
+        $('.g-collection-infopage-longitude').empty();
+        var tooltip = d3.select('.g-collection-infopage-longitude')
             .append('div')
-            .attr('class', 'infopage-gantt-tooltip');
+            .attr('class', 'infopage-longitude-tooltip');
         tooltip.append('div')
-            .attr('class', 'gantt-tooltip-event');
+            .attr('class', 'longitude-tooltip-event');
         tooltip.append('div')
-            .attr('class', 'gantt-tooltip-date');
+            .attr('class', 'longitude-tooltip-date');
 
         var tooltipData = tooltip.append('div')
-            .attr('class', 'gantt-tooltip-data');
+            .attr('class', 'longitude-tooltip-data');
 
         var tooltipSubject = tooltipData.append('div')
-            .attr('class', 'gantt-tooltip-subject gantt-tooltip-data-row');
+            .attr('class', 'longitude-tooltip-subject longitude-tooltip-data-row');
         tooltipSubject.append('span')
-            .attr('class', 'gantt-tooltip-subject-key gantt-tooltip-key');
-        tooltipSubject.select('.gantt-tooltip-subject-key').text('Subject');
+            .attr('class', 'longitude-tooltip-subject-key longitude-tooltip-key');
+        tooltipSubject.select('.longitude-tooltip-subject-key').text('Subject');
         tooltipSubject.append('span')
-            .attr('class', 'gantt-tooltip-subject-value gantt-tooltip-value');
+            .attr('class', 'longitude-tooltip-subject-value longitude-tooltip-value');
 
         var tooltipScanWeight = tooltipData.append('div')
-            .attr('class', 'gantt-tooltip-scan-weight gantt-tooltip-data-row gantt-tooltip-scan');
+            .attr('class', 'longitude-tooltip-scan-weight longitude-tooltip-data-row longitude-tooltip-scan');
         tooltipScanWeight.append('span')
-            .attr('class', 'gantt-tooltip-scan-weight-key gantt-tooltip-key');
-        tooltipScanWeight.select('.gantt-tooltip-scan-weight-key').text('Weight (kg)');
+            .attr('class', 'longitude-tooltip-scan-weight-key longitude-tooltip-key');
+        tooltipScanWeight.select('.longitude-tooltip-scan-weight-key').text('Weight (kg)');
         tooltipScanWeight.append('span')
-            .attr('class', 'gantt-tooltip-scan-weight-value gantt-tooltip-value');
+            .attr('class', 'longitude-tooltip-scan-weight-value longitude-tooltip-value');
 
         var tooltipScanAge = tooltipData.append('div')
-            .attr('class', 'gantt-tooltip-scan-age gantt-tooltip-data-row gantt-tooltip-scan');
+            .attr('class', 'longitude-tooltip-scan-age longitude-tooltip-data-row longitude-tooltip-scan');
         tooltipScanAge.append('span')
-            .attr('class', 'gantt-tooltip-scan-age-key gantt-tooltip-key');
-        tooltipScanAge.select('.gantt-tooltip-scan-age-key').text('Age (days)');
+            .attr('class', 'longitude-tooltip-scan-age-key longitude-tooltip-key');
+        tooltipScanAge.select('.longitude-tooltip-scan-age-key').text('Age (days)');
         tooltipScanAge.append('span')
-            .attr('class', 'gantt-tooltip-scan-age-value gantt-tooltip-value');
+            .attr('class', 'longitude-tooltip-scan-age-value longitude-tooltip-value');
 
         var svg = d3.select(_selector)
             .append('svg')
@@ -141,7 +141,7 @@ d3.gantt = function (selector, options, hierarchyUpdateCallback) {
             .attr('width', width + margin.left + margin.right)
             .attr('height', height + margin.top + margin.bottom)
             .append('g')
-            .attr('class', 'gantt-chart')
+            .attr('class', 'longitude-chart')
             .attr('width', width + margin.left + margin.right)
             .attr('height', height + margin.top + margin.bottom)
             .attr('transform', 'translate(' + margin.left + ', ' + margin.top + ')');
@@ -215,14 +215,14 @@ d3.gantt = function (selector, options, hierarchyUpdateCallback) {
             .attr('font-size', '14px')
             .text('female');
 
-        return gantt.redraw(settings.mode);
+        return longitude.redraw(settings.mode);
     };
 
-    gantt.settings = function (newSettings) {
+    longitude.settings = function (newSettings) {
         _.defaults(settings, newSettings);
     };
 
-    gantt.redraw = function (mode) {
+    longitude.redraw = function (mode) {
         settings.mode = mode;
         if (settings.mode === 'time') {
             _tasks = settings.tasks;
@@ -236,7 +236,7 @@ d3.gantt = function (selector, options, hierarchyUpdateCallback) {
 
         var svg = d3.select('svg');
 
-        var ganttChartGroup = svg.select('.gantt-chart');
+        var longitudeChartGroup = svg.select('.longitude-chart');
 
         var xAxisLabel;
         var xAxisSwitchLabel;
@@ -248,8 +248,8 @@ d3.gantt = function (selector, options, hierarchyUpdateCallback) {
             xAxisSwitchLabel = '[click to display calendar view]';
         }
 
-        svg.select('.gantt-chart').select('.xaxis').remove();
-        svg.select('.gantt-chart').append('g')
+        svg.select('.longitude-chart').select('.xaxis').remove();
+        svg.select('.longitude-chart').append('g')
             .attr('class', 'x axis xaxis')
             .attr('transform', 'translate(0, ' + (height - margin.top - margin.bottom) + ')')
             .call(xAxis)
@@ -267,14 +267,14 @@ d3.gantt = function (selector, options, hierarchyUpdateCallback) {
             .text(xAxisSwitchLabel)
             .on('click', function () {
                 if (settings.mode === 'time') {
-                    gantt.redraw('linear');
+                    longitude.redraw('linear');
                 } else {
-                    gantt.redraw('time');
+                    longitude.redraw('time');
                 }
             });
 
-        svg.select('.gantt-chart').select('.yaxis').remove();
-        svg.select('.gantt-chart').append('g')
+        svg.select('.longitude-chart').select('.yaxis').remove();
+        svg.select('.longitude-chart').append('g')
             .attr('class', 'y axis yaxis')
             .call(yAxis)
         .append('text')
@@ -301,36 +301,36 @@ d3.gantt = function (selector, options, hierarchyUpdateCallback) {
         var tooltipOffsetY = 10;
         var eventMouseover = function (d) {
             d3.select('body').style('cursor', 'pointer');
-            var tooltip = d3.select('.infopage-gantt-tooltip');
+            var tooltip = d3.select('.infopage-longitude-tooltip');
             var date = new Date(d.startDate);
-            tooltip.select('.gantt-tooltip-date').text(date.toDateString());
-            tooltip.select('.gantt-tooltip-subject-value').text(d.taskName);
+            tooltip.select('.longitude-tooltip-date').text(date.toDateString());
+            tooltip.select('.longitude-tooltip-subject-value').text(d.taskName);
 
             if (d.status === 'dob') {
-                tooltip.select('.gantt-tooltip-event').text('Birth Event');
-                $('.gantt-tooltip-scan').hide();
+                tooltip.select('.longitude-tooltip-event').text('Birth Event');
+                $('.longitude-tooltip-scan').hide();
             } else {
-                tooltip.select('.gantt-tooltip-event').text('Scan Event');
-                $('.gantt-tooltip-scan').show();
-                tooltip.select('.gantt-tooltip-scan-weight-value').text(d.scanWeight);
-                tooltip.select('.gantt-tooltip-scan-age-value').text(d.scanAge);
+                tooltip.select('.longitude-tooltip-event').text('Scan Event');
+                $('.longitude-tooltip-scan').show();
+                tooltip.select('.longitude-tooltip-scan-weight-value').text(d.scanWeight);
+                tooltip.select('.longitude-tooltip-scan-age-value').text(d.scanAge);
             }
             // show the tooltip offset from the event rect
-            var tooltipWidth = $('.infopage-gantt-tooltip').outerWidth();
+            var tooltipWidth = $('.infopage-longitude-tooltip').outerWidth();
             var tooltipLeft;
-            if (d3.event.offsetX + tooltipOffsetX + tooltipWidth > $('.g-collection-infopage-gantt').width()) {
+            if (d3.event.offsetX + tooltipOffsetX + tooltipWidth > $('.g-collection-infopage-longitude').width()) {
                 tooltipLeft = d3.event.offsetX - (tooltipOffsetX + tooltipWidth);
             } else {
                 tooltipLeft = d3.event.offsetX + tooltipOffsetX;
             }
             tooltip.style('top', (d3.event.offsetY + tooltipOffsetY) + 'px')
                 .style('left', tooltipLeft + 'px');
-            $('.infopage-gantt-tooltip').show();
+            $('.infopage-longitude-tooltip').show();
 
         };
 
         var eventMouseout = function (d) {
-            $('.infopage-gantt-tooltip').hide();
+            $('.infopage-longitude-tooltip').hide();
             d3.select('body').style('cursor', 'auto');
         };
 
@@ -341,7 +341,7 @@ d3.gantt = function (selector, options, hierarchyUpdateCallback) {
         var sexSortedEvents = _.groupBy(_tasks, function (event) { return event.sex; });
 
         svg.selectAll('.female-event').remove();
-        var femaleEvents = svg.select('.gantt-chart').selectAll('.female-event')
+        var femaleEvents = svg.select('.longitude-chart').selectAll('.female-event')
             .data(sexSortedEvents.F, keyFunction).enter()
             .append('path')
             .attr('d', 'M-1 6L 11 6 M5 0 L5 12') // forms a plus sign
@@ -354,7 +354,7 @@ d3.gantt = function (selector, options, hierarchyUpdateCallback) {
             .on('mouseover', eventMouseover);
 
         svg.selectAll('.male-event').remove();
-        var maleEvents = svg.select('.gantt-chart').selectAll('.male-event')
+        var maleEvents = svg.select('.longitude-chart').selectAll('.male-event')
             .data(sexSortedEvents.M, keyFunction).enter()
             .append('circle')
             .attr('cx', 5)
@@ -368,8 +368,8 @@ d3.gantt = function (selector, options, hierarchyUpdateCallback) {
             .on('mouseover', eventMouseover)
             .attr('transform', rectTransform);
 
-        return gantt;
+        return longitude;
     };
 
-    return gantt;
+    return longitude;
 };
