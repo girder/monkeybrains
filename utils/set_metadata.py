@@ -1,5 +1,40 @@
 #!/usr/bin/env python
 
+"""
+utility script used to set metadata on a collection after an upload.  Expects metadata in json format
+as in the adjoining metadata.json file.  The format for an individual subject looks like the following,
+and dates should be formatted as YYYY-MM-DD.
+
+"023": {
+    "DOB": "2013-01-04",
+    "scans": [
+        ["02months", "2013-02-27", 0.716],
+        ["05months", "2013-06-06", 1.15],
+        ["08months", "2013-08-28", 1.64],
+        ["11months", "2013-11-20", 1.85],
+        ["14months", "2014-03-12", 2.24]],
+    "subject": "023",
+    "sex": "F"}
+
+This also expects to some degree that the folder structure is consistent with what is here:
+
+https://data.kitware.com/#collection/54b582c38d777f4362aa9cb3/folder/54b582d88d777f4362aa9cb5
+
+which is
+
+subject_id (e.g. 001)
+    scantime (e.g. 12months)
+        DTI
+            AUTOQC
+            ORIG
+        sMRI
+            ORIG
+            Reg2Atlas
+                AUTO_MASK
+
+data upload can be done by the girder python client cli.
+"""
+
 import re
 import girder_client
 
