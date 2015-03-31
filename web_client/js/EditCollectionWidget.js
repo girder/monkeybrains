@@ -1,26 +1,26 @@
-girder.views.monkeybrains_EditCollectionWidget = girder.View.extend({});
-
 girder.wrap(girder.views.EditCollectionWidget, 'render', function (render) {
-    var view = this;
-    render.call(this);
+    var view, monkeybrains, infoPage;
+    view = this;
+    render.call(view);
     if (view.model) {
-        var monkeybrains = this.model.get('monkeybrains');
+        monkeybrains = view.model.get('monkeybrains');
         if (monkeybrains) {
             $('.g-validation-failed-message').before(girder.templates.monkeybrains_editCollectionInfopage());
-            var infoPage = this.model.get('monkeybrainsInfoPage');
+            infoPage = view.model.get('monkeybrainsInfoPage');
             if (infoPage && infoPage !== '') {
                 view.$('#g-collection-infopage-edit').val(infoPage);
             }
         }
     }
 
-    return this;
+    return view;
 });
 
 girder.wrap(girder.views.EditCollectionWidget, 'updateCollection', function (updateCollection, fields) {
-    var view = this;
-    var infoPage = view.$('#g-collection-infopage-edit').val();
+    var view, infoPage;
+    view = this;
+    infoPage = view.$('#g-collection-infopage-edit').val();
     fields.monkeybrainsInfoPage = infoPage;
-    updateCollection.call(this, fields);
-    return this;
+    updateCollection.call(view, fields);
+    return view;
 });

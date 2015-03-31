@@ -18,7 +18,7 @@ Enable monkeybrains as a Girder plugin, then activate a specific Collection with
 
 Once the `monkeybrains` property is added to your Collection, when you edit the collection, a new component will appear below `Description` allowing you to add a Markdown Info Page on your Collection.  This Info Page will be rendered as Markdown at the top of your Collection page within Girder, although any inline HTML in the Markup is sanitized.   
 
-A Gantt type chart is also displayed on your Collection, showing a visualization of a longitudinal dataset.  This relies on an API call in the monkeybrains plugin called `getDatasetEvents`, which looks for Folders in the targeted Collection with a metadata key of `scan_date`, and returns the following set of metadata on those folders
+A chart is also displayed on your Collection, showing a visualization of a longitudinal dataset.  This relies on an API call in the monkeybrains plugin called `getDatasetEvents`, which looks for Folders in the targeted Collection with a metadata key of `scan_date`, and returns the following set of metadata on those folders
 
   * _id
   * baseParentId
