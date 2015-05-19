@@ -43,12 +43,12 @@ password = ''
 parent_id = '550702610640fd09bf7d6f53'
 host = 'localhost'
 port = 8080
-metadata_file = '/home/vagrant/metadata/metadata.json'
+metadata_file = '/Users/mgrauer/dev/monkeybrains/monkeybrains/utils/metadata.json'
 
 
 username = ''
 password = ''
-parent_id = '54b582d88d777f4362aa9cb5'
+parent_id = '553e6db18d777f082b5918eb'
 port = 443
 scheme = 'https'
 host = 'data.kitware.com'
@@ -61,7 +61,7 @@ def load_metadata(metadata_file):
 
 metadata = load_metadata(metadata_file)
 g = girder_client.GirderClient(host, port, scheme=scheme)
-g.authenticate(username, password)
+g.authenticate(interactive=True)
 
 subject_regex = re.compile(r'^(\d\d\d)$')
 subject_scan_age_regex = re.compile(r'^((\d*)(months|weeks))$')
@@ -79,9 +79,11 @@ def walkGirderTree(ancestorFolderId, parentType='folder', parentFolderName=None)
         thisFolder = g.getFolder(ancestorFolderId)
         name = thisFolder['name']
         print parentFolderName, name
+        updatedMeta = {}
 
-        if 'meta' in thisFolder and parentFolderName is not None:
-            meta = thisFolder['meta']
+        if parentFolderName is not None:
+            #if 'meta' in thisFolder and parentFolderName is not None:
+            #meta = thisFolder['meta']
             if parentFolderName == 'scan_data':
                 newMeta = metadata[name]
                 updatedMeta = {
@@ -90,9 +92,11 @@ def walkGirderTree(ancestorFolderId, parentType='folder', parentFolderName=None)
                     'sex': newMeta['sex'],
                     'subject_id': newMeta['subject']
                 }
-                for key in meta:
-                    if key not in updatedMeta:
-                        updatedMeta[key] = None
+                if 'meta' in thisFolder:
+                    meta = thisFolder['meta']
+                    for key in meta:
+                        if key not in updatedMeta:
+                            updatedMeta[key] = None
             else:
                 subjectMatches = subject_regex.search(parentFolderName)
                 ageMatches = subject_scan_age_regex.search(name)
@@ -108,14 +112,21 @@ def walkGirderTree(ancestorFolderId, parentType='folder', parentFolderName=None)
                         'scan_weight_kg': scanMeta[2],
                         'folder_type': 'scan'
                     }
-                    for key in meta:
-                        if key not in updatedMeta:
-                            updatedMeta[key] = None
+                    if 'meta' in thisFolder:
+                        meta = thisFolder['meta']
+                        for key in meta:
+                            if key not in updatedMeta:
+                                updatedMeta[key] = None
                 else:
                     # need to remove any meta here
-                    updatedMeta = {key: None for key in meta}
+                    if 'meta' in thisFolder:
+                        meta = thisFolder['meta']
+                        updatedMeta = {key: None for key in meta}
 
-            g.addMetadataToFolder(thisFolder['_id'], updatedMeta)
+            if len(updatedMeta.keys()) > 0:
+                print "adding meta to ", thisFolder['_id']
+                print updatedMeta
+                g.addMetadataToFolder(thisFolder['_id'], updatedMeta)
         else:
             # can't do anything without a parentFolderName
             pass
@@ -126,15 +137,15 @@ def walkGirderTree(ancestorFolderId, parentType='folder', parentFolderName=None)
 
         # items in current folder
         # shoudn't be more than 50
-        items = g.get('item', parameters={
-            'folderId': thisFolder['_id']
-        })
-        for item in items:
-            print parentFolderName, name, item['name']
+        #items = g.get('item', parameters={
+        #    'folderId': thisFolder['_id']
+        #})
+        #for item in items:
+        #    print parentFolderName, name, item['name']
             # remove metadata from items
-            updatedItemMeta = {key: None for key in item['meta']}
-            if len(updatedItemMeta) > 0:
-                g.addMetadataToItem(item['_id'], updatedItemMeta)
+            #updatedItemMeta = {key: None for key in item['meta']}
+            #if len(updatedItemMeta) > 0:
+            #    g.addMetadataToItem(item['_id'], updatedItemMeta)
 
         offset += len(folders)
         if len(folders) < 50:
