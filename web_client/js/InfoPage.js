@@ -139,7 +139,7 @@ girder.views.monkeybrains_InfoPageWidget = girder.View.extend({
         subject_ids.sort(function (a, b) {
             var firstScanA = subjects[a].firstScanDays,
                 firstScanB = subjects[b].firstScanDays;
-            return (firstScanA > firstScanB) - (firstScanA < firstScanB);
+            return (firstScanA < firstScanB) - (firstScanA > firstScanB);
         });
         var longitude = {
             subject_ids: subject_ids,
