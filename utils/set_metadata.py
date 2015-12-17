@@ -37,13 +37,9 @@ data upload can be done by the girder python client cli.
 
 import re
 import girder_client
+import requests.packages.urllib3
+requests.packages.urllib3.disable_warnings()
 
-username = ''
-password = ''
-parent_id = '550702610640fd09bf7d6f53'
-host = 'localhost'
-port = 8080
-metadata_file = '/Users/mgrauer/dev/monkeybrains/monkeybrains/utils/metadata.json'
 
 
 username = ''
@@ -59,7 +55,10 @@ def load_metadata(metadata_file):
         json_data = json.load(json_file)
     return json_data
 
+metadata_file = 'metadata.json'
 metadata = load_metadata(metadata_file)
+
+
 g = girder_client.GirderClient(host, port, scheme=scheme)
 g.authenticate(interactive=True)
 
@@ -78,32 +77,32 @@ def walkGirderTree(ancestorFolderId, parentType='folder', parentFolderName=None)
         })
         thisFolder = g.getFolder(ancestorFolderId)
         name = thisFolder['name']
-        print parentFolderName, name
-        updatedMeta = {}
+        metaFromJson = {}
+        metadataToUpdate = {}
 
         if parentFolderName is not None:
-            #if 'meta' in thisFolder and parentFolderName is not None:
-            #meta = thisFolder['meta']
             if parentFolderName == 'scan_data':
                 newMeta = metadata[name]
-                updatedMeta = {
-                    'dob': newMeta['DOB'],
-                    'folder_type': 'subject',
-                    'sex': newMeta['sex'],
-                    'subject_id': newMeta['subject']
+                metaFromJson = {
+                    u'dob': newMeta['DOB'],
+                    u'folder_type': 'subject',
+                    u'sex': newMeta['sex'],
+                    u'subject_id': newMeta['subject']
                 }
                 if 'meta' in thisFolder:
                     meta = thisFolder['meta']
-                    for key in meta:
-                        if key not in updatedMeta:
-                            updatedMeta[key] = None
+                    for key in metaFromJson:
+                        if key not in meta or meta[key] != metaFromJson[key]:
+                            metadataToUpdate[key] = metaFromJson[key]
+                else:
+                    metadataToUpdate = metaFromJson
             else:
                 subjectMatches = subject_regex.search(parentFolderName)
                 ageMatches = subject_scan_age_regex.search(name)
                 if subjectMatches and ageMatches:
                     newMeta = metadata[parentFolderName]
                     scanMeta = [scan for scan in newMeta['scans'] if scan[0] == name][0]
-                    updatedMeta = {
+                    metaFromJson = {
                         'dob': newMeta['DOB'],
                         'sex': newMeta['sex'],
                         'subject_id': parentFolderName,
@@ -112,21 +111,23 @@ def walkGirderTree(ancestorFolderId, parentType='folder', parentFolderName=None)
                         'scan_weight_kg': scanMeta[2],
                         'folder_type': 'scan'
                     }
+                    metadataToUpdate = {}
                     if 'meta' in thisFolder:
                         meta = thisFolder['meta']
-                        for key in meta:
-                            if key not in updatedMeta:
-                                updatedMeta[key] = None
+                        for key in metaFromJson:
+                            if key not in meta or meta[key] != metaFromJson[key]:
+                                metadataToUpdate[key] = metaFromJson[key]
+                    else:
+                        metadataToUpdate = metaFromJson
                 else:
                     # need to remove any meta here
                     if 'meta' in thisFolder:
                         meta = thisFolder['meta']
-                        updatedMeta = {key: None for key in meta}
-
-            if len(updatedMeta.keys()) > 0:
-                print "adding meta to ", thisFolder['_id']
-                print updatedMeta
-                g.addMetadataToFolder(thisFolder['_id'], updatedMeta)
+                        metadataToUpdate = {key: None for key in meta}
+            if metadataToUpdate:
+                print "would be adding meta to ", thisFolder['name'], thisFolder['_id']
+                print(metadataToUpdate)
+                g.addMetadataToFolder(thisFolder['_id'], metadataToUpdate)
         else:
             # can't do anything without a parentFolderName
             pass
@@ -134,18 +135,6 @@ def walkGirderTree(ancestorFolderId, parentType='folder', parentFolderName=None)
         # recurse on children folders
         for folder in folders:
             walkGirderTree(folder['_id'], 'folder', name)
-
-        # items in current folder
-        # shoudn't be more than 50
-        #items = g.get('item', parameters={
-        #    'folderId': thisFolder['_id']
-        #})
-        #for item in items:
-        #    print parentFolderName, name, item['name']
-            # remove metadata from items
-            #updatedItemMeta = {key: None for key in item['meta']}
-            #if len(updatedItemMeta) > 0:
-            #    g.addMetadataToItem(item['_id'], updatedItemMeta)
 
         offset += len(folders)
         if len(folders) < 50:
