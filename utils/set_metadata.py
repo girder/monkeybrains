@@ -123,7 +123,8 @@ def walkGirderTree(ancestorFolderId, parentType='folder', parentFolderName=None)
                     # need to remove any meta here
                     if 'meta' in thisFolder:
                         meta = thisFolder['meta']
-                        metadataToUpdate = {key: None for key in meta}
+                        for key, value in meta.items():
+				metadataToUpdate[key] = None
             if metadataToUpdate:
                 print "would be adding meta to ", thisFolder['name'], thisFolder['_id']
                 print(metadataToUpdate)
