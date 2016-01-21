@@ -97,7 +97,7 @@ def walkGirderTree(ancestorFolderId, parentType='folder', parentFolderName=None)
                 else:
                     metadataToUpdate = metaFromJson
             else:
-                subjectMatches = subject_regex.search(parentFolderName)
+                subjectMatches = subject_regex.search('024') #change this based on which subject you are trying to upload
                 ageMatches = subject_scan_age_regex.search(name)
                 if subjectMatches and ageMatches:
                     newMeta = metadata[parentFolderName]
