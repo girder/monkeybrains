@@ -1,3 +1,4 @@
+import d3 from 'd3';
 /**
  * This longitudinal chart is based on the d3 gantt chart v2.0 originally
  * created by author Dimitry Kudrayvtsev.
@@ -14,9 +15,11 @@ d3.longitude = function (selector, options, hierarchyUpdateCallback) {
         timeDomainMode: FIT_TIME_DOMAIN_MODE,
         tickFormat: '%m-%y',
         taskStatuses: [],
+        // example
         // {"dob":"birth","scan-weight-1":"scan-weight-1","scan-weight-2":"scan-weight-2","scan-weight-3":"scan-weight-3","scan-weight-4":"scan-weight-4","scan-weight-5":"scan-weight-5","scan-weight-6":"scan-weight-6","scan-weight-7":"scan-weight-7","scan-weight-8":"scan-weight-8"}
         rowLabels: [], // subject ids
         weightBinRanges: [],
+        // example
         // {"bin":"scan-weight-1","start":0.535,"end":1.151875},{"bin":"scan-weight-2","start":1.151875,"end":1.7687499999999998},{"bin":"scan-weight-3","start":1.7687499999999998,"end":2.3856249999999997},{"bin":"scan-weight-4","start":2.3856249999999997,"end":3.0024999999999995},{"bin":"scan-weight-5","start":3.0024999999999995,"end":3.6193749999999993},{"bin":"scan-weight-6","start":3.6193749999999993,"end":4.236249999999999},{"bin":"scan-weight-7","start":4.236249999999999,"end":4.8531249999999995},{"bin":"scan-weight-8","start":4.8531249999999995,"end":5.47}]
         tasks: [], //
         // example
@@ -40,7 +43,6 @@ d3.longitude = function (selector, options, hierarchyUpdateCallback) {
     var _tasks = [];
     var height = element.height() - margin.top - margin.bottom - 5;
     var width = element.width() - margin.right - margin.left - 5;
-
     var keyFunction;
     var getKeyFunction = function () {
         if (settings.mode === 'time') {

@@ -1,4 +1,47 @@
-girder.views.monkeybrains_InfoPageWidget = girder.View.extend({
+import CollectionView from 'girder/views/body/CollectionView';
+import FolderModel from 'girder/models/FolderModel';
+import { renderMarkdown } from 'girder/misc';
+import { restRequest } from 'girder/rest';
+import View from 'girder/views/View';
+import { wrap } from 'girder/utilities/PluginUtils'; 
+
+import CollectionInfopageTemplate from './templates/collectionInfopage.pug';
+import EditCollectionInfopageTemplate from './templates/editCollectionInfopage.pug';
+import EditCollectionWidget from 'girder/views/widgets/EditCollectionWidget';
+
+import './stylesheets/longitude.styl';
+import './stylesheets/infopage.styl';
+
+import "./longitude-d3.js";
+
+wrap(EditCollectionWidget, 'render', function (render) {
+    var view, monkeybrains, infoPage;
+    view = this;
+    render.call(view);
+    if (view.model) {
+        monkeybrains = view.model.get('monkeybrains');
+        if (monkeybrains) {
+            $('.g-validation-failed-message').before(EditCollectionInfopageTemplate);
+            infoPage = view.model.get('monkeybrainsInfoPage');
+            if (infoPage && infoPage !== '') {
+                view.$('#g-collection-infopage-edit').val(infoPage);
+            }
+        }
+    }
+
+    return view;
+});
+
+wrap(EditCollectionWidget, 'updateCollection', function (updateCollection, fields) {
+    var view, infoPage;
+    view = this;
+    infoPage = view.$('#g-collection-infopage-edit').val();
+    fields.monkeybrainsInfoPage = infoPage;
+    updateCollection.call(view, fields);
+    return view;
+});
+
+var InfoPageWidget = View.extend({
 
     createLongitudeInput: function (scans) {
         // data munging
@@ -155,9 +198,9 @@ girder.views.monkeybrains_InfoPageWidget = girder.View.extend({
     },
 
     initialize: function (settings) {
-        this.model = settings.model;
+	this.model = settings.model;
         this.hierarchyUpdateCallback = function (folderId) {
-            var folder = new girder.models.FolderModel();
+            var folder = new FolderModel();
             folder.set({
                 _id: folderId
             }).on('g:fetched', function () {
@@ -174,13 +217,14 @@ girder.views.monkeybrains_InfoPageWidget = girder.View.extend({
     render: function () {
         var infoPage = this.model.get('monkeybrainsInfoPage');
         var infopageMarkdownContainer;
+
         if (infoPage) {
             infopageMarkdownContainer = $('.g-collection-infopage-markdown');
-            girder.renderMarkdown(infoPage, infopageMarkdownContainer);
+            renderMarkdown(infoPage, infopageMarkdownContainer);
         }
 
         var id = this.model.get('_id');
-        girder.restRequest({
+        restRequest({
             path: 'collection/' + id + '/datasetEvents',
             type: 'GET'
         }).done(_.bind(function (resp) {
@@ -205,14 +249,13 @@ girder.views.monkeybrains_InfoPageWidget = girder.View.extend({
             console.log(err);
         }, this));
     }
-
 });
 
-girder.wrap(girder.views.CollectionView, 'render', function (render) {
+wrap(CollectionView, 'render', function (render) {
     render.call(this);
     if (this.model.get('monkeybrains')) {
-        $('.g-collection-header').after(girder.templates.collection_infopage());
-        this.infoPageWidget = new girder.views.monkeybrains_InfoPageWidget({
+        $('.g-collection-header').after(CollectionInfopageTemplate);
+	this.infoPageWidget = new InfoPageWidget({
             model: this.model,
             access: this.access,
             parentView: this,
