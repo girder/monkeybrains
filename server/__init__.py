@@ -16,7 +16,7 @@
 #  See the License for the specific language governing permissions and
 #  limitations under the License.
 ###############################################################################
-import bson
+import bson.json_util
 from girder import constants
 from girder import events
 from girder.api import access
