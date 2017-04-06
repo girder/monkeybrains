@@ -3,6 +3,7 @@
 "description": "Provides a customized view of a longitudinal dataset stored in a community",
 "version": "0.1.1",
 "npm": {
+    "localNodeModules": true,
     "dependencies": {
         "d3": ">= 3.0.0 <4.0.0"
         }
