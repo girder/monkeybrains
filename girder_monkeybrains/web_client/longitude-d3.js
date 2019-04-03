@@ -1,4 +1,4 @@
-import d3 from 'girder_plugins/monkeybrains/node/d3';
+import d3 from 'd3';
 /**
  * This longitudinal chart is based on the d3 gantt chart v2.0 originally
  * created by author Dimitry Kudrayvtsev.

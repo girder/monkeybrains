@@ -1,0 +1,14 @@
+{
+    "name": "@girder/monkeybrains",
+    "version": "1.0.0",
+    "peerDepencencies": {
+        "@girder/core": "*"
+    },
+    "dependencies": {
+	"d3": "3.5.17"
+    },
+    "girderPlugin": {
+        "name": "monkeybrains",
+        "main": "./main.js"
+    }
+}

@@ -24,7 +24,10 @@ from girder.api.rest import Resource, loadmodel
 from girder.api.rest import RestException
 from girder.api.describe import Description
 from girder.constants import AccessType
+from girder.plugin import getPlugin, GirderPlugin
 from girder.utility.model_importer import ModelImporter
+
+
 
 MONKEYBRAINS_FIELD = 'monkeybrains'
 MONKEYBRAINS_INFOPAGE_FIELD = 'monkeybrainsInfoPage'
@@ -41,9 +44,8 @@ class Monkeybrains(Resource):
             del collection[MONKEYBRAINS_FIELD]
         else:
             collection[MONKEYBRAINS_FIELD] = monkeybrains
-        self.model('collection').save(collection, validate=False)
-        return self.model('collection').filter(collection,
-                                               self.getCurrentUser())
+        ModelImporter.model('collection').save(collection, validate=False)
+        return ModelImporter.model('collection').filter(collection, self.getCurrentUser())
     setCollectionMonkeybrains.description = (
         Description('Set monkeybrains activation state for the collection.')
         .param('id', 'The collection ID', paramType='path')
@@ -65,7 +67,7 @@ class DatasetEvents(Resource):
         :param collection: parent collection of sought events.
         :return resource: the loaded resource document.
         """
-        model = self.model('folder')
+        model = ModelImporter.model('folder')
         # return these metadata keys
         metadata_keys = ['folder_type', 'scan_age', 'sex', 'scan_date',
                          'subject_id', 'dob', 'scan_weight_kg']
@@ -106,16 +108,22 @@ def updateCollection(event):
         event.info['returnVal'][MONKEYBRAINS_INFOPAGE_FIELD] = infoPage
 
 
-def load(info):
-    monkeybrains = Monkeybrains()
-    info['apiRoot'].collection.route('PUT', (':id', 'monkeybrains'),
-                                     monkeybrains.setCollectionMonkeybrains)
-    datasetEvents = DatasetEvents()
-    info['apiRoot'].collection.route('GET', (':id', 'datasetEvents'),
-                                     datasetEvents.getDatasetEvents)
+class MonkeybrainsPlugin(GirderPlugin):
+    DISPLAY_NAME = 'Monkeybrains Plugin'
 
-    ModelImporter.model('collection').exposeFields(
-        level=constants.AccessType.READ, fields=[MONKEYBRAINS_FIELD,
-                                                 MONKEYBRAINS_INFOPAGE_FIELD])
-    events.bind('rest.put.collection/:id.after',
-                'monkeybrains_updateCollection', updateCollection)
+    CLIENT_SOURCE_PATH = 'web_client'
+
+    def load(self, info):
+        monkeybrains = Monkeybrains()
+        info['apiRoot'].collection.route('PUT', (':id', 'monkeybrains'),
+                                         monkeybrains.setCollectionMonkeybrains)
+        datasetEvents = DatasetEvents()
+        info['apiRoot'].collection.route('GET', (':id', 'datasetEvents'),
+                                         datasetEvents.getDatasetEvents)
+    
+        ModelImporter.model('collection').exposeFields(
+            level=constants.AccessType.READ, fields=[MONKEYBRAINS_FIELD,
+                                                     MONKEYBRAINS_INFOPAGE_FIELD])
+        events.bind('rest.put.collection/:id.after',
+                    'monkeybrains_updateCollection', updateCollection)
+
