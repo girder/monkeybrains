@@ -32,13 +32,11 @@ wrap(EditCollectionWidget, 'render', function (render) {
     return view;
 });
 
-wrap(EditCollectionWidget, 'updateCollection', function (updateCollection, fields) {
-    var view, infoPage;
-    view = this;
-    infoPage = view.$('#g-collection-infopage-edit').val();
+wrap(EditCollectionWidget, '_saveCollection', function (_saveCollection, fields) {
+    var infoPage;
+    infoPage = this.$('#g-collection-infopage-edit').val();
     fields.monkeybrainsInfoPage = infoPage;
-    updateCollection.call(view, fields);
-    return view;
+    return _saveCollection.call(this, fields);
 });
 
 var InfoPageWidget = View.extend({
