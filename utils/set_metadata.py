@@ -124,9 +124,9 @@ def walkGirderTree(ancestorFolderId, parentType='folder', parentFolderName=None)
                     if 'meta' in thisFolder:
                         meta = thisFolder['meta']
                         for key, value in meta.items():
-				metadataToUpdate[key] = None
+                            metadataToUpdate[key] = None
             if metadataToUpdate:
-                print "would be adding meta to ", thisFolder['name'], thisFolder['_id']
+                print( "would be adding meta to ", thisFolder['name'], thisFolder['_id'])
                 print(metadataToUpdate)
                 g.addMetadataToFolder(thisFolder['_id'], metadataToUpdate)
         else:

@@ -1,13 +1,13 @@
-import CollectionView from 'girder/views/body/CollectionView';
-import FolderModel from 'girder/models/FolderModel';
-import { renderMarkdown } from 'girder/misc';
-import { restRequest } from 'girder/rest';
-import View from 'girder/views/View';
-import { wrap } from 'girder/utilities/PluginUtils'; 
+import CollectionView from '@girder/core/views/body/CollectionView';
+import FolderModel from '@girder/core/models/FolderModel';
+import { renderMarkdown } from '@girder/core/misc';
+import { restRequest } from '@girder/core/rest';
+import View from '@girder/core/views/View';
+import { wrap } from '@girder/core/utilities/PluginUtils'; 
 
 import CollectionInfopageTemplate from './templates/collectionInfopage.pug';
 import EditCollectionInfopageTemplate from './templates/editCollectionInfopage.pug';
-import EditCollectionWidget from 'girder/views/widgets/EditCollectionWidget';
+import EditCollectionWidget from '@girder/core/views/widgets/EditCollectionWidget';
 
 import './stylesheets/longitude.styl';
 import './stylesheets/infopage.styl';
@@ -32,13 +32,11 @@ wrap(EditCollectionWidget, 'render', function (render) {
     return view;
 });
 
-wrap(EditCollectionWidget, 'updateCollection', function (updateCollection, fields) {
-    var view, infoPage;
-    view = this;
-    infoPage = view.$('#g-collection-infopage-edit').val();
+wrap(EditCollectionWidget, '_saveCollection', function (_saveCollection, fields) {
+    var infoPage;
+    infoPage = this.$('#g-collection-infopage-edit').val();
     fields.monkeybrainsInfoPage = infoPage;
-    updateCollection.call(view, fields);
-    return view;
+    return _saveCollection.call(this, fields);
 });
 
 var InfoPageWidget = View.extend({
@@ -225,8 +223,8 @@ var InfoPageWidget = View.extend({
 
         var id = this.model.get('_id');
         restRequest({
-            path: 'collection/' + id + '/datasetEvents',
-            type: 'GET'
+            url: 'collection/' + id + '/datasetEvents',
+            method: 'GET'
         }).done(_.bind(function (resp) {
             var longitudeData = this.createLongitudeInput(resp);
             var settings = {
