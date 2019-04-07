@@ -21,12 +21,12 @@ from girder import constants
 from girder import events
 from girder.api import access
 from girder.api.rest import Resource, loadmodel
-from girder.api.rest import RestException
+from girder.api.rest import filtermodel, RestException
 from girder.api.describe import Description
 from girder.constants import AccessType
-from girder.plugin import getPlugin, GirderPlugin
-from girder.utility.model_importer import ModelImporter
-
+from girder.plugin import GirderPlugin
+from girder.models.collection import Collection
+from girder.models.folder import Folder
 
 
 MONKEYBRAINS_FIELD = 'monkeybrains'
@@ -36,6 +36,7 @@ MONKEYBRAINS_INFOPAGE_FIELD = 'monkeybrainsInfoPage'
 class Monkeybrains(Resource):
 
     @access.public
+    @filtermodel(model=Collection)
     @loadmodel(model='collection', level=AccessType.WRITE)
     def setCollectionMonkeybrains(self, collection, params):
         self.requireParams((MONKEYBRAINS_FIELD, ), params)
@@ -44,8 +45,8 @@ class Monkeybrains(Resource):
             del collection[MONKEYBRAINS_FIELD]
         else:
             collection[MONKEYBRAINS_FIELD] = monkeybrains
-        ModelImporter.model('collection').save(collection, validate=False)
-        return ModelImporter.model('collection').filter(collection, self.getCurrentUser())
+        Collection().updateCollection(collection)
+        return collection
     setCollectionMonkeybrains.description = (
         Description('Set monkeybrains activation state for the collection.')
         .param('id', 'The collection ID', paramType='path')
@@ -67,7 +68,6 @@ class DatasetEvents(Resource):
         :param collection: parent collection of sought events.
         :return resource: the loaded resource document.
         """
-        model = ModelImporter.model('folder')
         # return these metadata keys
         metadata_keys = ['folder_type', 'scan_age', 'sex', 'scan_date',
                          'subject_id', 'dob', 'scan_weight_kg']
@@ -87,7 +87,7 @@ class DatasetEvents(Resource):
         except ValueError:
             raise RestException('The query parameter must be a JSON object.')
         document = \
-            model.collection.group(key, condition, initial, reduc, finalize)
+            Folder().collection.group(key, condition, initial, reduc, finalize)
         return document
     getDatasetEvents.description = (
         Description('Get datasetEvents for the collection.')
@@ -99,12 +99,11 @@ class DatasetEvents(Resource):
 def updateCollection(event):
     params = event.info['params']
     if MONKEYBRAINS_FIELD in params and MONKEYBRAINS_INFOPAGE_FIELD in params:
-        model = ModelImporter.model('collection')
         # ok to force here because rest.put.collection call requires WRITE
-        collection = model.load(params['_id'], force=True)
+        collection = Collection().load(params['_id'], force=True)
         infoPage = params[MONKEYBRAINS_INFOPAGE_FIELD]
         collection[MONKEYBRAINS_INFOPAGE_FIELD] = infoPage
-        model.save(collection, validate=False)
+        Collection().updateCollection(collection)
         event.info['returnVal'][MONKEYBRAINS_INFOPAGE_FIELD] = infoPage
 
 
@@ -120,10 +119,8 @@ class MonkeybrainsPlugin(GirderPlugin):
         datasetEvents = DatasetEvents()
         info['apiRoot'].collection.route('GET', (':id', 'datasetEvents'),
                                          datasetEvents.getDatasetEvents)
-    
-        ModelImporter.model('collection').exposeFields(
-            level=constants.AccessType.READ, fields=[MONKEYBRAINS_FIELD,
-                                                     MONKEYBRAINS_INFOPAGE_FIELD])
+
+        Collection().exposeFields(level=constants.AccessType.READ, fields=[MONKEYBRAINS_FIELD,
+                                  MONKEYBRAINS_INFOPAGE_FIELD])
         events.bind('rest.put.collection/:id.after',
                     'monkeybrains_updateCollection', updateCollection)
-
