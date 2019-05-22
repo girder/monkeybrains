@@ -1,0 +1,3 @@
+.tox/
+girder_monkeybrains.egg-info/
+*.pyc
