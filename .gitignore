@@ -1,3 +1,4 @@
 .tox/
 girder_monkeybrains.egg-info/
+node_modules/
 *.pyc
