@@ -1,0 +1,56 @@
+@import "~nib/index.styl"
+
+$jumbotron-top-left-color = rgba(82, 82, 82, 0.30)
+$jumbotron-bottom-right-color = rgba(61, 114, 180, 0.60)
+$jumbotron-bg-img-url = "https://data.kitware.com/api/v1/file/551477eb8d777f3f5edf4c6a/download"
+
+.jumbotron
+  background linear-gradient(top left, $jumbotron-top-left-color 0, $jumbotron-bottom-right-color 100%), url($jumbotron-bg-img-url) no-repeat center center
+  background-size cover
+
+  h1
+    font-size 56px
+
+  p
+    font-size 18px
+
+.monkeybrains-download-dataset
+  margin-left 40%
+
+.g-collection-infopage-markdown
+
+  p
+    text-align justify
+    word-wrap break-word
+    width 1000px
+
+  img[alt="DataFlowchart"]
+    width 768px
+    height 476px
+    margin-left 100px
+
+  img
+    width 150px
+    height 150px
+    margin 4px
+
+  img[alt="14monthsT2axial header"]
+    width 250px
+    height 250px
+    margin 10px 10px 10px 100px
+
+  img[alt="DTI header"]
+    width 250px
+    height 250px
+    margin 10px
+
+  img[alt="8monthsT1saggital header"]
+    width 250px
+    height 250px
+    margin 10px
+
+  th
+    text-align center
+
+  table
+    margin-left 5%

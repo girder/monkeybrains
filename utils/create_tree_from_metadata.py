@@ -49,8 +49,9 @@ def main():
 
     for subject_id, subject_metadata in metadata.items():
         subject_folder = create_folder_on_demand(parent_folder_id, subject_id)
-        for (scan_time, scan_date, scan_weight) in subject_metadata['scans']:
+        for (scan_time, _scan_date, _scan_weight) in subject_metadata['scans']:
             create_folder_on_demand(subject_folder['_id'], scan_time)
+
 
 if __name__ == '__main__':
     main()

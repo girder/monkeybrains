@@ -1,9 +1,10 @@
 #!/usr/bin/env python
 
 """
-utility script used to set metadata on a collection after an upload.  Expects metadata in json format
-as in the adjoining metadata.json file.  The format for an individual subject looks like the following,
-and dates should be formatted as YYYY-MM-DD.
+Utility script used to set metadata on a collection after an upload.
+
+Expects metadata in json format as in the adjoining metadata.json file.  The format for an
+individual subject looks like the following, and dates should be formatted as YYYY-MM-DD.
 
 "023": {
     "DOB": "2013-01-04",
@@ -41,7 +42,6 @@ import requests.packages.urllib3
 requests.packages.urllib3.disable_warnings()
 
 
-
 username = ''
 password = ''
 parent_id = '553e6db18d777f082b5918eb'
@@ -49,11 +49,13 @@ port = 443
 scheme = 'https'
 host = 'data.kitware.com'
 
+
 def load_metadata(metadata_file):
     import json
     with open(metadata_file) as json_file:
         json_data = json.load(json_file)
     return json_data
+
 
 metadata_file = 'metadata.json'
 metadata = load_metadata(metadata_file)
@@ -64,6 +66,7 @@ g.authenticate(interactive=True)
 
 subject_regex = re.compile(r'^(\d\d\d)$')
 subject_scan_age_regex = re.compile(r'^((\d*)(months|weeks))$')
+
 
 def walkGirderTree(ancestorFolderId, parentType='folder', parentFolderName=None):
     offset = 0
@@ -123,10 +126,10 @@ def walkGirderTree(ancestorFolderId, parentType='folder', parentFolderName=None)
                     # need to remove any meta here
                     if 'meta' in thisFolder:
                         meta = thisFolder['meta']
-                        for key, value in meta.items():
+                        for key in meta.keys():
                             metadataToUpdate[key] = None
             if metadataToUpdate:
-                print( "would be adding meta to ", thisFolder['name'], thisFolder['_id'])
+                print('would be adding meta to ', thisFolder['name'], thisFolder['_id'])
                 print(metadataToUpdate)
                 g.addMetadataToFolder(thisFolder['_id'], metadataToUpdate)
         else:
@@ -140,7 +143,6 @@ def walkGirderTree(ancestorFolderId, parentType='folder', parentFolderName=None)
         offset += len(folders)
         if len(folders) < 50:
             break
-
 
 
 walkGirderTree(parent_id, 'folder')

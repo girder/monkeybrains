@@ -1,11 +1,16 @@
 import d3 from 'd3';
+import $ from 'jquery';
+import _ from 'underscore';
+
+import './stylesheets/longitude.styl';
+
 /**
  * This longitudinal chart is based on the d3 gantt chart v2.0 originally
  * created by author Dimitry Kudrayvtsev.
  */
 d3.longitude = function (selector, options, hierarchyUpdateCallback) {
     var FIT_TIME_DOMAIN_MODE = 'fit';
-    var FIXED_TIME_DOMAIN_MODE = 'fixed';
+    var FIXED_TIME_DOMAIN_MODE = 'fixed'; // eslint-disable-line no-unused-vars
     var defaultTimeDomainStart = d3.time.day.offset(new Date(), -3);
     var defaultTimeDomainEnd = d3.time.hour.offset(new Date(), +3);
     var defaults = {
@@ -64,7 +69,7 @@ d3.longitude = function (selector, options, hierarchyUpdateCallback) {
             };
         } else {
             return function (d) {
-                return 'translate(' + (x(d.scanAge)  - 8) + ',' + y(d.taskName) + ')';
+                return 'translate(' + (x(d.scanAge) - 8) + ',' + y(d.taskName) + ')';
             };
         }
     };
@@ -156,16 +161,16 @@ d3.longitude = function (selector, options, hierarchyUpdateCallback) {
             .attr('transform', 'translate(-100,0)');
 
         var legend = legendGroup.selectAll('.legend')
-                .data(settings.weightBinRanges)
-                .enter()
-                .append('g')
-                .attr('class', 'legend')
-                .attr('transform', function (d, i) {
-                    var height = legendRectSize + legendSpacing;
-                    var horz = -2 * legendRectSize;
-                    var vert = i * height;
-                    return 'translate(' + horz + ',' + vert + ')';
-                });
+            .data(settings.weightBinRanges)
+            .enter()
+            .append('g')
+            .attr('class', 'legend')
+            .attr('transform', function (d, i) {
+                var height = legendRectSize + legendSpacing;
+                var horz = -2 * legendRectSize;
+                var vert = i * height;
+                return 'translate(' + horz + ',' + vert + ')';
+            });
         legend.append('rect')
             .attr('width', legendRectSize)
             .attr('height', legendRectSize)
@@ -239,7 +244,7 @@ d3.longitude = function (selector, options, hierarchyUpdateCallback) {
 
         var svg = d3.select('svg');
 
-        var longitudeChartGroup = svg.select('.longitude-chart');
+        var longitudeChartGroup = svg.select('.longitude-chart'); // eslint-disable-line no-unused-vars
 
         var xAxisLabel;
         var xAxisSwitchLabel;
@@ -256,7 +261,7 @@ d3.longitude = function (selector, options, hierarchyUpdateCallback) {
             .attr('class', 'x axis xaxis')
             .attr('transform', 'translate(0, ' + (height - margin.top - margin.bottom) + ')')
             .call(xAxis)
-         .append('text')
+            .append('text')
             .attr('font-size', '16px')
             .attr('y', 40)
             .attr('x', 360)
@@ -280,7 +285,7 @@ d3.longitude = function (selector, options, hierarchyUpdateCallback) {
         svg.select('.longitude-chart').append('g')
             .attr('class', 'y axis yaxis')
             .call(yAxis)
-        .append('text')
+            .append('text')
             .attr('font-size', '16px')
             .attr('transform', 'rotate(-90)')
             .attr('y', -50)
@@ -329,7 +334,6 @@ d3.longitude = function (selector, options, hierarchyUpdateCallback) {
             tooltip.style('top', (d3.event.offsetY + tooltipOffsetY) + 'px')
                 .style('left', tooltipLeft + 'px');
             $('.infopage-longitude-tooltip').show();
-
         };
 
         var eventMouseout = function (d) {
@@ -341,9 +345,10 @@ d3.longitude = function (selector, options, hierarchyUpdateCallback) {
             hierarchyUpdateCallback(d.folderId);
         };
 
-        var sexSortedEvents = _.groupBy(_tasks, function (event) { return event.sex; });
+        var sexSortedEvents = _.groupBy(_tasks, _.property('sex'));
 
         svg.selectAll('.female-event').remove();
+        // eslint-disable-next-line no-unused-vars
         var femaleEvents = svg.select('.longitude-chart').selectAll('.female-event')
             .data(sexSortedEvents.F, keyFunction).enter()
             .append('path')
@@ -357,6 +362,7 @@ d3.longitude = function (selector, options, hierarchyUpdateCallback) {
             .on('mouseover', eventMouseover);
 
         svg.selectAll('.male-event').remove();
+        // eslint-disable-next-line no-unused-vars
         var maleEvents = svg.select('.longitude-chart').selectAll('.male-event')
             .data(sexSortedEvents.M, keyFunction).enter()
             .append('circle')

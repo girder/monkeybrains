@@ -1,7 +1,7 @@
 from setuptools import setup
 
 with open('README.md') as readme:
-  long_description = readme.read()
+    long_description = readme.read()
 
 setup(
     name='girder-monkeybrains',
@@ -16,8 +16,8 @@ setup(
     install_requires=['girder'],
     include_package_data=True,
     entry_points={
-      'girder.plugin': [
-          'monkeybrains = girder_monkeybrains:MonkeybrainsPlugin'
-      ]
+        'girder.plugin': [
+            'monkeybrains = girder_monkeybrains:MonkeybrainsPlugin'
+        ]
     }
 )

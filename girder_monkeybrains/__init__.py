@@ -50,8 +50,8 @@ class Monkeybrains(Resource):
     setCollectionMonkeybrains.description = (
         Description('Set monkeybrains activation state for the collection.')
         .param('id', 'The collection ID', paramType='path')
-        .param('monkeybrains', 'Boolean: monkeybrains activation state for ' +
-               'this collection.', required=True, dataType='boolean')
+        .param('monkeybrains', 'Boolean: monkeybrains activation state for this collection.',
+               required=True, dataType='boolean')
         .errorResponse('ID was invalid.')
         .errorResponse('Write permission denied on the collection.', 403))
 
@@ -61,9 +61,11 @@ class DatasetEvents(Resource):
     @loadmodel(model='collection', level=AccessType.READ)
     def getDatasetEvents(self, collection, params):
         """
-        Get the individual events in a dataset, which are defined as folders
+        Get the individual events in a dataset.
+
+        These are defined as folders
         having metadata keys (scan_date, subject_id, scan_weight_kg, DOB) and
-        that live under the passed in collection.
+        which live under the passed in collection.
         Handle setting monkeybrains for any resource that supports them.
         :param collection: parent collection of sought events.
         :return resource: the loaded resource document.
@@ -71,7 +73,7 @@ class DatasetEvents(Resource):
         # return these metadata keys
         metadata_keys = ['folder_type', 'scan_age', 'sex', 'scan_date',
                          'subject_id', 'dob', 'scan_weight_kg']
-        key_d = {'meta.'+key: 1 for key in metadata_keys}
+        key_d = {'meta.' + key: 1 for key in metadata_keys}
         key_d['parentId'] = 1
         key_d['baseParentId'] = 1
         key_d['_id'] = 1
@@ -79,8 +81,8 @@ class DatasetEvents(Resource):
         condition_d = {'baseParentId': {'$oid': collection['_id']},
                        'meta.scan_date': {'$exists': True}}
         initial = {}
-        reduc = "function (curr, result) {}"
-        finalize = "function (curr, result) {}"
+        reduc = 'function (curr, result) {}'
+        finalize = 'function (curr, result) {}'
         try:
             key = bson.json_util.loads(bson.json_util.dumps(key_d))
             condition = bson.json_util.loads(bson.json_util.dumps(condition_d))
