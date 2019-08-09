@@ -5,7 +5,7 @@ with open('README.md') as readme:
 
 setup(
     name='girder-monkeybrains',
-    version='1.0.2',
+    version='1.0.3',
     description='Displays monkey neurodevelopmental data.',
     long_description=long_description,
     long_description_content_type='text/markdown',
