@@ -181,7 +181,7 @@ const InfoPageWidget = View.extend({
                 hierarchyWidget._fetchToRoot(folder);
                 hierarchyWidget.setCurrentModel(folder, { setRoute: false });
             })
-            .error(() => {
+            .fail(() => {
                 console.error(`Error fetching folder ${folderId}`);
             });
     },
@@ -221,7 +221,7 @@ const InfoPageWidget = View.extend({
                 // display longitude chart in scan age display to start
                 longitude('linear');
             })
-            .error((err) => {
+            .fail((err) => {
                 console.error('Error getting datasetEvents', err);
             });
 
