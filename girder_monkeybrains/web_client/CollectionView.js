@@ -10,8 +10,7 @@ wrap(CollectionView, 'render', function (render) {
         this.infoPageWidget = new InfoPageWidget({
             model: this.model,
             access: this.access,
-            parentView: this,
-            el: this.$('.g-collection-infopage')
+            parentView: this
         });
         this.infoPageWidget.$el
             .insertAfter(this.$('.g-collection-header'));

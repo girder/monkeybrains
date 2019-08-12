@@ -1,6 +1,6 @@
 {
     "name": "@girder/monkeybrains",
-    "version": "1.0.4",
+    "version": "1.0.5",
     "peerDepencencies": {
         "@girder/core": "*"
     },
